@@ -9,7 +9,7 @@ Repository URL:
 
 ## 1. Fork the Repo
 
-- <img src="./ImageBed/Fork.png" alt="Fork" width="560">
+- <img src="./ImageBed/Fork.png" alt="Fork" width="600">
 
 ## 2. Clone Your Fork
 
