@@ -1,0 +1,66 @@
+name: Export CW2 PUML to PNG
+
+on:
+  push:
+    paths:
+      - "CW2/*.puml"
+      - ".github/workflows/export-cw2-puml.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  export:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Install Graphviz
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y graphviz
+
+      - name: Download PlantUML
+        run: |
+          curl -L -o plantuml.jar https://github.com/plantuml/plantuml/releases/latest/download/plantuml.jar
+
+      - name: Export .puml files to CW2/ExportIMG as PNG
+        run: |
+          set -euo pipefail
+          mkdir -p CW2/ExportIMG
+
+          found=0
+          while IFS= read -r -d '' file; do
+            found=1
+            name="$(basename "$file")"
+            base="${name%.*}"
+
+            java -jar plantuml.jar -tpng "$file"
+            mv "${file%.*}.png" "CW2/ExportIMG/${base}.png"
+          done < <(find CW2 -path "CW2/ExportIMG" -prune -o -type f -iname "*.puml" -print0)
+
+          if [ "$found" -eq 0 ]; then
+            echo "No .puml files found under CW2."
+          fi
+
+      - name: Commit and push exported PNGs
+        if: github.event_name == 'push'
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add CW2/ExportIMG
+          if git diff --cached --quiet; then
+            echo "No image changes to commit."
+            exit 0
+          fi
+          git commit -m "chore: auto-export CW2 PUML to PNG [skip ci]"
+          git push
