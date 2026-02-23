@@ -63,8 +63,7 @@ jobs:
           branch: "codex/auto-export-cw2-puml"
           delete-branch: true
           add-paths: |
-            CW2/ExportIMG/*.png
-            CW2/ExportIMG/**/*.png
+            CW2/ExportIMG
 
       - name: Auto-approve PR
         if: steps.cpr.outputs.pull-request-number != ''
