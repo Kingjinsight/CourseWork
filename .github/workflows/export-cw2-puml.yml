@@ -4,6 +4,7 @@ on:
   push:
     paths:
       - "CW2/*.puml"
+      - "CW2/**/*.puml"
       - ".github/workflows/export-cw2-puml.yml"
   workflow_dispatch:
 
@@ -65,10 +66,10 @@ jobs:
           add-paths: |
             CW2/ExportIMG
 
-      - name: Auto-approve PR
+      - name: Auto squash and merge PR
         if: steps.cpr.outputs.pull-request-number != ''
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          gh pr review "${{ steps.cpr.outputs.pull-request-number }}" --approve --body "Auto-approved generated CW2 diagram export PR." || \
-          echo "Auto-approve skipped (likely self-approval restricted by repository rules)."
+          gh pr merge "${{ steps.cpr.outputs.pull-request-number }}" --squash --auto --delete-branch || \
+          echo "Auto-merge skipped (likely blocked by repo rules or missing permissions)."
