@@ -1,0 +1,36 @@
+@startuml
+
+class User {
+
+}
+class EntertainmentProvider
+class AdminStaff
+class Student
+class Performance
+class Booking
+class Review
+class Event
+
+interface VerificationSystem
+interface PaymentSystem
+
+User <|-- Student
+User <|-- AdminStaff
+User <|-- EntertainmentProvider
+
+Student "1" -- "0.." Review
+Student "1" -- "0.." Booking
+
+
+VerificationSystem <|.. EntertainmentProvider
+
+PaymentSystem <|.. Student
+PaymentSystem <|.. AdminStaff
+PaymentSystem <|.. Booking
+
+Booking "0.." -- "1" Performance
+Performance "0.." -- "1" Event
+Event "0.." -- "1" EntertainmentProvider
+Event "1" -- "0.." Review
+
+@enduml
