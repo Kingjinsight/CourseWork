@@ -1,25 +1,75 @@
 @startuml
-
 class User {
+    - userID: String
+    - email: String
+    - password: Stringr
+    + login(email, password)
+    + logout()
+}
+
+class EntertainmentProvider {
+    - name: String
+    - businessNumber: String
+    - description: String
+    + register()
+    + createEvent()
+}
+
+class AdminStaff {
+    + sponsorEvent(eventID, sponsorAmount)
+}
+
+class Student {
+    - preferences: List<EventType>
+    + reviewPerformance(performanceID, rating, comment)
+}
+
+class Performance {
+    - 
+}
+
+class Booking {
 
 }
-class EntertainmentProvider
-class AdminStaff
-class Student
-class Performance
-class Booking
-class Review
-class Event
 
-interface VerificationSystem
-interface PaymentSystem
+class Review {
+    - performanceID: String
+    - rating: int
+    - comment: String
+}
+
+class Event {
+    - eventID: String
+    - title: String
+    - type: <EventType>
+    - isTicketed: Boolean
+    + calculateRating()
+}
+
+interface VerificationSystem {
+    + verifyBusiness(businessNumber)
+}
+
+interface PaymentSystem {
+    + processPayment(amount)
+    + processRefund(amount, userID)
+}
+
+enum EventType {
+   Music
+   Theatre
+   Dance
+   Movie
+   Sports
+   Games
+}
 
 User <|-- Student
 User <|-- AdminStaff
 User <|-- EntertainmentProvider
 
-Student "1" -- "0.." Review
-Student "1" -- "0.." Booking
+Student "1" -- "0..*" Review
+Student "1" -- "0..*" Booking
 
 
 VerificationSystem <|.. EntertainmentProvider
@@ -28,9 +78,8 @@ PaymentSystem <|.. Student
 PaymentSystem <|.. AdminStaff
 PaymentSystem <|.. Booking
 
-Booking "0.." -- "1" Performance
-Performance "0.." -- "1" Event
-Event "0.." -- "1" EntertainmentProvider
-Event "1" -- "0.." Review
-
+Booking "0..*" -- "1" Performance
+Performance "0..*" -- "1" Event
+Event "0..*" -- "1" EntertainmentProvider
+Event "1" -- "0..*" Review
 @enduml
