@@ -1,35 +1,64 @@
 @startuml
-class User {
+
+/'central controller
+currentUser used to distinguish user type, student or adminstaff or ep by access users
+'/
+class EventsApp {
+    - currentUser: AuthenticatingUser 
+    - users: Collection<AuthenticatingUser>
+    - events: Collection<Events>
+    + login(email: String, Password: String): void
+    + logout(): void
+    + registerEntertainmentProvider()
+    + createEvent()
+    + searchPerformances()
+    + viewPerformance()
+    + bookPerformance()
+    + editPreferences()
+    + cancelPerformance(performanceID: String, message: String): void
+    + cancelBooking(bookingNumber: String): void
+    + reviewPerformance()
+    + sponsorPerformance()
+}
+
+abstract class AuthenticatingUser {
     - userID: String
     - email: String
-    - password: Stringr
-    + login(email, password)
-    + logout()
+    - password: String
 }
 
 class EntertainmentProvider {
     - name: String
     - businessNumber: String
     - description: String
-    + register()
-    + createEvent()
 }
 
 class AdminStaff {
-    + sponsorEvent(eventID, sponsorAmount)
 }
 
 class Student {
-    - preferences: List<EventType>
-    + reviewPerformance(performanceID, rating, comment)
+    - preferences: Collection<EventType>
 }
 
 class Performance {
-    - 
+    - performanceID: String
+    - startDateTime: Date
+    - endDateTime: Date 
+    - performerNames: Collection<string>
+    - ticketPrice: double
+    - remainingTickets: int
+    - venueAddress: String 
+    - isOutdoor: Boolean
+    - isSmoking: Boolean
+    + applySponsorship(amount: double): void
 }
 
 class Booking {
-
+    - bookingNumber: String
+    - numTickets: int
+    - studentName: String
+    - contactEmail: String
+    - contactPhone: String
 }
 
 class Review {
@@ -41,18 +70,18 @@ class Review {
 class Event {
     - eventID: String
     - title: String
-    - type: <EventType>
+    - type: EventType
     - isTicketed: Boolean
-    + calculateRating()
+    + getAverageRating(): double
 }
 
 interface VerificationSystem {
-    + verifyBusiness(businessNumber)
+    + verifyBusiness(businessNumber: String): Boolean
 }
 
 interface PaymentSystem {
-    + processPayment(amount)
-    + processRefund(amount, userID)
+    + processPayment(amount: double, userID: String): Boolean
+    + processRefund(amount: double, userID: String): void
 }
 
 enum EventType {
@@ -64,19 +93,19 @@ enum EventType {
    Games
 }
 
-User <|-- Student
-User <|-- AdminStaff
-User <|-- EntertainmentProvider
+
+EventsApp "1" -- "0..*" AuthenticatingUser
+EventsApp "1" -- "0..*" Event
+EventsApp ..> PaymentSystem
+EventsApp ..> VerificationSystem
+
+AuthenticatingUser <|-- AdminStaff
+AuthenticatingUser <|-- EntertainmentProvider
+AuthenticatingUser <|-- Student
 
 Student "1" -- "0..*" Review
 Student "1" -- "0..*" Booking
 
-
-VerificationSystem <|.. EntertainmentProvider
-
-PaymentSystem <|.. Student
-PaymentSystem <|.. AdminStaff
-PaymentSystem <|.. Booking
 
 Booking "0..*" -- "1" Performance
 Performance "0..*" -- "1" Event
