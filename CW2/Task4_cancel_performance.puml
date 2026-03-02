@@ -1,0 +1,46 @@
+@startuml
+
+actor EntertainmentProvider
+participant EventsApp
+participant Performance
+participant Booking
+participant PaymentSystem
+
+activate EventsApp
+
+loop until valid performanceID and  non-empty message
+    EntertainmentProvider -> EventsApp: cancelPerformance(performanceID: String, message: String)
+    EventsApp -> Performance : validate(performanceID)
+    Performance --> EventsApp: isValid
+
+    alt invalid performanceID
+        EventsApp --> EntertainmentProvider : error, request new performanceID
+        EntertainmentProvider -> EventsApp : new performanceID
+    else empty message
+        EventsApp --> EntertainmentProvider : error, request message
+        EntertainmentProvider -> EventsApp : new message
+    end
+end
+
+EventsApp -> Booking : getBookingsFor(performanceID)
+Booking --> EventsApp: bookings
+
+alt performance has no bookings
+    EventsApp -> Performance : cancel()
+    EventsApp --> EntertainmentProvider : confirmation
+
+else performance has bookings
+    EventsApp -> PaymentSystem : processRefund(bookings, message)
+    alt refund successful
+        PaymentSystem --> EventsApp : success
+        EventsApp -> Performance : cancel()
+        EventsApp --> EntertainmentProvider : confirmation + refunds processed
+    else refund failed
+        PaymentSystem --> EventsApp : failure
+        EventsApp --> EntertainmentProvider : cannot cancel
+    end
+end
+
+deactivate EventsApp
+
+@enduml

@@ -19,6 +19,7 @@ class EventsApp {
     + cancelBooking(bookingNumber: String): void
     + reviewPerformance()
     + sponsorPerformance()
+
 }
 
 abstract class AuthenticatingUser {
@@ -51,6 +52,8 @@ class Performance {
     - isOutdoor: Boolean
     - isSmoking: Boolean
     + applySponsorship(amount: double): void
+    + validate(performanceID: String): Boolean
+    + cancel(): void
 }
 
 class Booking {
@@ -59,6 +62,7 @@ class Booking {
     - studentName: String
     - contactEmail: String
     - contactPhone: String
+    + getBookingsFor(performanceID: String): Collection<Booking>
 }
 
 class Review {
@@ -81,7 +85,7 @@ interface VerificationSystem {
 
 interface PaymentSystem {
     + processPayment(amount: double, userID: String): Boolean
-    + processRefund(amount: double, userID: String): void
+    + processRefund(bookings: Collection<Booking>, message: String): void
 }
 
 enum EventType {
