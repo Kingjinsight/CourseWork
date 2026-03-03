@@ -11,20 +11,28 @@ on:
       - "CW2/*.puml"
       - "CW2/**/*.puml"
       - ".github/workflows/export-cw2-puml.yml"
+  push:
+    branches:
+      - main
+    paths:
+      - "CW2/*.puml"
+      - "CW2/**/*.puml"
+      - ".github/workflows/export-cw2-puml.yml"
   workflow_dispatch:
 
 permissions:
   contents: write
+  pull-requests: write
 
 jobs:
   export:
-    if: ${{ github.repository == 'Inf2-SEPP-CW-2026/CourseWork' && (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository) }}
+    if: ${{ github.repository == 'Inf2-SEPP-CW-2026/CourseWork' }}
     runs-on: ubuntu-latest
     steps:
       - name: Checkout branch
         uses: actions/checkout@v4
         with:
-          ref: ${{ github.head_ref || github.ref }}
+          ref: ${{ github.event_name == 'pull_request' && format('refs/pull/{0}/head', github.event.pull_request.number) || github.ref }}
 
       - name: Set up Java
         uses: actions/setup-java@v4
@@ -54,8 +62,6 @@ jobs:
             relative_dir="$(dirname "$relative")"
             base="$(basename "${relative%.*}")"
 
-            java -jar plantuml.jar -tpng "$file"
-
             if [ "$relative_dir" = "." ]; then
               target_dir="CW2/ExportIMG"
             else
@@ -63,7 +69,8 @@ jobs:
               mkdir -p "$target_dir"
             fi
 
-            mv "${file%.*}.png" "$target_dir/${base}.png"
+            target_file="$target_dir/${base}.png"
+            java -jar plantuml.jar -tpng -pipe < "$file" > "$target_file"
           done < <(find CW2 -path "CW2/ExportIMG" -prune -o -type f -iname "*.puml" -print0)
 
           find CW2/ExportIMG -depth -mindepth 1 -type d -empty -delete
@@ -72,20 +79,32 @@ jobs:
             echo "No .puml files found under CW2."
           fi
 
-      - name: Commit exported PNGs back to PR branch
+      - name: Upload exported PNGs for PR checks
         if: ${{ github.event_name == 'pull_request' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: exported-png-pr-${{ github.event.pull_request.number }}
+          path: CW2/ExportIMG
+          if-no-files-found: warn
+
+      - name: Create or update PR for exported PNGs
+        if: ${{ github.event_name != 'pull_request' }}
+        id: cpr
+        uses: peter-evans/create-pull-request@v6
+        with:
+          commit-message: "chore: auto-export CW2 PUML to PNG [skip ci]"
+          title: "chore: auto-export CW2 PUML to PNG"
+          body: |
+            Auto-generated PNG exports from `.puml` files under `CW2`.
+          branch: "codex/auto-export-cw2-puml"
+          delete-branch: true
+          add-paths: |
+            CW2/ExportIMG
+
+      - name: Auto squash and merge PR
+        if: ${{ github.event_name != 'pull_request' && steps.cpr.outputs.pull-request-number != '' }}
         env:
-          BRANCH_NAME: ${{ github.event.pull_request.head.ref }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          set -euo pipefail
-
-          if [ -z "$(git status --porcelain --untracked-files=all -- CW2/ExportIMG)" ]; then
-            echo "No PNG changes to commit."
-            exit 0
-          fi
-
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add -A CW2/ExportIMG
-          git commit -m "chore: auto-export CW2 PUML to PNG [skip ci]"
-          git push origin "HEAD:${BRANCH_NAME}"
+          gh pr merge "${{ steps.cpr.outputs.pull-request-number }}" --squash --auto --delete-branch || \
+          echo "Auto-merge skipped (likely blocked by repo rules or missing permissions)."

@@ -1,4 +1,4 @@
-@startuml
+@startuml Cancel Performance
 
 actor EntertainmentProvider
 participant EventsApp
