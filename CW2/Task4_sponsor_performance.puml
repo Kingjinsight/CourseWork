@@ -1,0 +1,55 @@
+@startuml Sponsor Performance
+
+actor AdminStaff
+participant EventsApp
+participant Performance
+
+note over AdminStaff, EventsApp
+The trigger bundles performanceID and amount
+into one message to match the coursework's
+single-threaded burst assumption.
+end note
+
+loop repeat for each sponsorship attempt
+    AdminStaff -> EventsApp: sponsorPerformance(performanceID: String, amount: String)
+    activate EventsApp
+
+    EventsApp -> Performance: validate(performanceID)
+    Performance --> EventsApp: isValid
+
+    alt invalid performanceID
+        EventsApp --> AdminStaff: error, request valid performanceID
+        deactivate EventsApp
+
+    else valid performanceID
+        EventsApp -> Performance: isSponsorable()
+        Performance --> EventsApp: sponsorable
+
+        alt performance belongs to a non-ticketed event
+            EventsApp --> AdminStaff: cannot sponsor a non-ticketed performance
+            deactivate EventsApp
+
+        else performance can be sponsored
+            alt amount is not a valid number
+                EventsApp --> AdminStaff: error, request numeric amount
+                deactivate EventsApp
+
+            else amount can be parsed
+                EventsApp -> Performance: canBeSponsored(amount: double)
+                Performance --> EventsApp: amountValid
+
+                alt amount is larger than the current ticket price
+                    EventsApp --> AdminStaff: error, request smaller amount
+                    deactivate EventsApp
+
+                else valid sponsorship amount
+                    EventsApp -> Performance: applySponsorship(amount: double)
+                    EventsApp --> AdminStaff: confirmation
+                    deactivate EventsApp
+                end
+            end
+        end
+    end
+end
+
+@enduml

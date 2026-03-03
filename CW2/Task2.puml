@@ -1,4 +1,4 @@
-@startuml
+@startuml Task 2
 
 /'central controller
 currentUser used to distinguish user type, student or adminstaff or ep by access users
@@ -6,7 +6,7 @@ currentUser used to distinguish user type, student or adminstaff or ep by access
 class EventsApp {
     - currentUser: AuthenticatingUser 
     - users: Collection<AuthenticatingUser>
-    - events: Collection<Events>
+    - events: Collection<Event>
     + login(email: String, Password: String): void
     + logout(): void
     + registerEntertainmentProvider()
@@ -17,8 +17,8 @@ class EventsApp {
     + editPreferences()
     + cancelPerformance(performanceID: String, message: String): void
     + cancelBooking(bookingNumber: String): void
-    + reviewPerformance()
-    + sponsorPerformance()
+    + reviewPerformance(performanceID: String, rating: int, comment: String): Review
+    + sponsorPerformance(performanceID: String, amount: String): Boolean
 
 }
 
@@ -45,13 +45,18 @@ class Performance {
     - performanceID: String
     - startDateTime: Date
     - endDateTime: Date 
-    - performerNames: Collection<string>
+    - performerNames: Collection<String>
     - ticketPrice: double
+    - sponsorshipAmount: double
     - remainingTickets: int
     - venueAddress: String 
+    - venueCapacity: int
     - isOutdoor: Boolean
     - isSmoking: Boolean
     + applySponsorship(amount: double): void
+    + canBeSponsored(amount: double): Boolean
+    + hasTakenPlace(currentTime: Date): Boolean
+    + isSponsorable(): Boolean
     + validate(performanceID: String): Boolean
     + cancel(): void
 }
@@ -66,7 +71,6 @@ class Booking {
 }
 
 class Review {
-    - performanceID: String
     - rating: int
     - comment: String
 }
@@ -76,7 +80,8 @@ class Event {
     - title: String
     - type: EventType
     - isTicketed: Boolean
-    + getAverageRating(): double
+    + addReview(review: Review): void
+    + calculateAverageRating(): double
 }
 
 interface VerificationSystem {
@@ -112,7 +117,20 @@ Student "1" -- "0..*" Booking
 
 
 Booking "0..*" -- "1" Performance
+Review "0..*" -- "1" Performance
 Performance "0..*" -- "1" Event
 Event "0..*" -- "1" EntertainmentProvider
 Event "1" -- "0..*" Review
+
+note right of Review
+Stored against the Event, while the linked
+Performance preserves which attended
+performance the review refers to.
+end note
+
+note right of Performance
+sponsorshipAmount stores the discount
+applied to future search, view and
+booking flows.
+end note
 @enduml
