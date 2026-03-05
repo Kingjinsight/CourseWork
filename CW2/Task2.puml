@@ -43,7 +43,7 @@ class GeneralController {
   - bookings: BookingRepository
   - reviews: ReviewRepository
   - studentCtrl: StudentController
-  - epCtrl: EPController
+  - epCtrl: EntertainmentProviderController
   - adminCtrl: AdminStaffController
 
   + login(email: String, password: String): Boolean
@@ -52,7 +52,7 @@ class GeneralController {
   + viewPerformance(performanceID: String): Performance
 
   + asStudent(): StudentController
-  + asEP(): EPController
+  + asEP(): EntertainmentProviderController
   + asAdminStaff(): AdminStaffController
 }
 
@@ -72,7 +72,7 @@ class StudentController {
   + reviewPerformance(performanceID: String, rating: int, comment: String): Review
 }
 
-class EPController {
+class EntertainmentProviderController {
   + registerEntertainmentProvider(name: String, businessNumber: String, description: String, email: String, password: String): Boolean
   + createEvent(e: Event): void
   + createPerformance(eventID: String, p: Performance): void
@@ -84,7 +84,7 @@ class AdminStaffController {
 }
 
 AbstractSubController <|-- StudentController
-AbstractSubController <|-- EPController
+AbstractSubController <|-- EntertainmentProviderController
 AbstractSubController <|-- AdminStaffController
 
 GeneralController "1" o-- "1" Session
@@ -94,7 +94,7 @@ GeneralController "1" o-- "1" EventRepository
 GeneralController "1" o-- "1" BookingRepository
 GeneralController "1" o-- "1" ReviewRepository
 GeneralController "1" o-- "1" StudentController
-GeneralController "1" o-- "1" EPController
+GeneralController "1" o-- "1" EntertainmentProviderController
 GeneralController "1" o-- "1" AdminStaffController
 
 '========================
@@ -140,11 +140,11 @@ StudentController ..> BookingRepository
 StudentController ..> ReviewRepository
 StudentController ..> PaymentSystem
 
-EPController ..> UserRepository : registerEntertainmentProvider
-EPController ..> EventRepository
-EPController ..> PaymentSystem
-EPController ..> VerificationSystem
-EPController ..> BookingRepository
+EntertainmentProviderController ..> UserRepository : registerEntertainmentProvider
+EntertainmentProviderController ..> EventRepository
+EntertainmentProviderController ..> PaymentSystem
+EntertainmentProviderController ..> VerificationSystem
+EntertainmentProviderController ..> BookingRepository
 
 AdminStaffController ..> EventRepository
 

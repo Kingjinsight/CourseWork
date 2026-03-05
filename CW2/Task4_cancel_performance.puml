@@ -1,46 +1,57 @@
 @startuml Cancel Performance
 
 actor EntertainmentProvider
-participant EventsApp
-participant Performance
-participant Booking
+participant GeneralController
+participant AuthorisationService
+participant EntertainmentProviderController
+participant EventRepository
+participant BookingRepository
 participant PaymentSystem
+participant Performance
 
-activate EventsApp
+activate GeneralController
 
-loop until valid performanceID and  non-empty message
-    EntertainmentProvider -> EventsApp: cancelPerformance(performanceID: String, message: String)
-    EventsApp -> Performance : validate(performanceID)
-    Performance --> EventsApp: isValid
+EntertainmentProvider -> GeneralController: asEP()
+GeneralController -> AuthorisationService: requireRole(session, EntertainmentProvider)
 
-    alt invalid performanceID
-        EventsApp --> EntertainmentProvider : error, request new performanceID
-        EntertainmentProvider -> EventsApp : new performanceID
-    else empty message
-        EventsApp --> EntertainmentProvider : error, request message
-        EntertainmentProvider -> EventsApp : new message
+alt not logged in or wrong role
+    AuthorisationService --> GeneralController: error
+    GeneralController --> EntertainmentProvider: error, not authorised
+else authorised
+    GeneralController --> EntertainmentProvider: EntertainmentProviderController
+end
+
+EntertainmentProvider -> EntertainmentProviderController: cancelPerformance(performanceID, messageToStudents)
+activate EntertainmentProviderController
+
+EntertainmentProviderController -> EventRepository: findPerformanceByEP(performanceID, epID)
+EventRepository --> EntertainmentProviderController: performance
+
+alt performance not found
+    EntertainmentProviderController --> EntertainmentProvider: false (invalid performanceID or not owned)
+else performance found
+    EntertainmentProviderController -> BookingRepository: findByPerformance(performanceID)
+    BookingRepository --> EntertainmentProviderController: bookings
+
+    alt no bookings
+        EntertainmentProviderController -> EventRepository: cancelPerformance(performanceID)
+        EntertainmentProviderController --> EntertainmentProvider: true
+    else has bookings
+        loop for each booking
+            EntertainmentProviderController -> PaymentSystem: processRefund(booking.amountPaid, booking.contactEmail, messageToStudents)
+            PaymentSystem --> EntertainmentProviderController: success / failure
+        end
+
+        alt all refunds successful
+            EntertainmentProviderController -> EventRepository: cancelPerformance(performanceID)
+            EntertainmentProviderController --> EntertainmentProvider: true
+        else any refund failed
+            EntertainmentProviderController --> EntertainmentProvider: false (refund failed)
+        end
     end
 end
 
-EventsApp -> Booking : getBookingsFor(performanceID)
-Booking --> EventsApp: bookings
-
-alt performance has no bookings
-    EventsApp -> Performance : cancel()
-    EventsApp --> EntertainmentProvider : confirmation
-
-else performance has bookings
-    EventsApp -> PaymentSystem : processRefund(bookings, message)
-    alt refund successful
-        PaymentSystem --> EventsApp : success
-        EventsApp -> Performance : cancel()
-        EventsApp --> EntertainmentProvider : confirmation + refunds processed
-    else refund failed
-        PaymentSystem --> EventsApp : failure
-        EventsApp --> EntertainmentProvider : cannot cancel
-    end
-end
-
-deactivate EventsApp
+deactivate EntertainmentProviderController
+deactivate GeneralController
 
 @enduml
