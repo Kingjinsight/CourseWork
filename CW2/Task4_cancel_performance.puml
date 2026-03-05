@@ -13,11 +13,15 @@ activate GeneralController
 
 EntertainmentProvider -> GeneralController: asEP()
 GeneralController -> AuthorisationService: requireRole(session, EntertainmentProvider)
+activate AuthorisationService
 
 alt not logged in or wrong role
     AuthorisationService --> GeneralController: error
+    deactivate AuthorisationService
     GeneralController --> EntertainmentProvider: error, not authorised
 else authorised
+    AuthorisationService --> GeneralController: ok
+    deactivate AuthorisationService
     GeneralController --> EntertainmentProvider: EntertainmentProviderController
 end
 
@@ -25,28 +29,60 @@ EntertainmentProvider -> EntertainmentProviderController: cancelPerformance(perf
 activate EntertainmentProviderController
 
 EntertainmentProviderController -> EventRepository: findPerformanceByEP(performanceID, epID)
+activate EventRepository
 EventRepository --> EntertainmentProviderController: performance
+deactivate EventRepository
 
 alt performance not found
     EntertainmentProviderController --> EntertainmentProvider: false (invalid performanceID or not owned)
 else performance found
-    EntertainmentProviderController -> BookingRepository: findByPerformance(performanceID)
-    BookingRepository --> EntertainmentProviderController: bookings
+    EntertainmentProviderController -> Performance: hasTakenPlace(currentTime)
+    activate Performance
+    Performance --> EntertainmentProviderController: result
+    deactivate Performance
 
-    alt no bookings
-        EntertainmentProviderController -> EventRepository: cancelPerformance(performanceID)
-        EntertainmentProviderController --> EntertainmentProvider: true
-    else has bookings
-        loop for each booking
-            EntertainmentProviderController -> PaymentSystem: processRefund(booking.amountPaid, booking.contactEmail, messageToStudents)
-            PaymentSystem --> EntertainmentProviderController: success / failure
-        end
+    alt performance has already taken place
+        EntertainmentProviderController --> EntertainmentProvider: false (already taken place)
+    else performance has not taken place
+        EntertainmentProviderController -> BookingRepository: findByPerformance(performanceID)
+        activate BookingRepository
+        BookingRepository --> EntertainmentProviderController: bookings
+        deactivate BookingRepository
 
-        alt all refunds successful
+        alt no bookings
             EntertainmentProviderController -> EventRepository: cancelPerformance(performanceID)
+            activate EventRepository
+            EventRepository --> EntertainmentProviderController: done
+            deactivate EventRepository
             EntertainmentProviderController --> EntertainmentProvider: true
-        else any refund failed
-            EntertainmentProviderController --> EntertainmentProvider: false (refund failed)
+        else has bookings
+            alt messageToStudents is empty
+                EntertainmentProviderController --> EntertainmentProvider: false (message required)
+            else message is valid
+                loop for each booking
+                    EntertainmentProviderController -> PaymentSystem: processRefund(booking.amountPaid, booking.contactEmail, messageToStudents)
+                    activate PaymentSystem
+                    PaymentSystem --> EntertainmentProviderController: success / failure
+                    deactivate PaymentSystem
+                end
+
+                alt all refunds successful
+                    loop for each booking
+                        EntertainmentProviderController -> BookingRepository: removeBooking(booking.bookingNumber)
+                        activate BookingRepository
+                        BookingRepository --> EntertainmentProviderController: done
+                        deactivate BookingRepository
+                    end
+
+                    EntertainmentProviderController -> EventRepository: cancelPerformance(performanceID)
+                    activate EventRepository
+                    EventRepository --> EntertainmentProviderController: done
+                    deactivate EventRepository
+                    EntertainmentProviderController --> EntertainmentProvider: true
+                else any refund failed
+                    EntertainmentProviderController --> EntertainmentProvider: false (refund failed)
+                end
+            end
         end
     end
 end

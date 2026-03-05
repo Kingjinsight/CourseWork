@@ -117,6 +117,7 @@ class EventRepository {
   + addPerformance(eventID: String, p: Performance): void
   + addReviewToEvent(eventID: String, review: Review): void
   + applySponsorship(performanceID: String, amount: double): Boolean
+  + removeEvent(eventID:String): void
 }
 
 class BookingRepository {
@@ -208,6 +209,7 @@ class Event {
   - title: String
   - type: EventType
   - isTicketed: Boolean
+  - entertainmentProvider: EntertainmentProvider
   + addReview(review: Review): void
   + calculateAverageRating(): double
 }
