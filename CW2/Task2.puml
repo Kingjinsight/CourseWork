@@ -1,126 +1,235 @@
 @startuml Task 2
 
-/'central controller
-currentUser used to distinguish user type, student or adminstaff or ep by access users
-'/
-class EventsApp {
-    - currentUser: AuthenticatingUser 
-    - users: Collection<AuthenticatingUser>
-    - events: Collection<Event>
-    + login(email: String, Password: String): void
-    + logout(): void
-    + registerEntertainmentProvider()
-    + createEvent()
-    + searchPerformances()
-    + viewPerformance()
-    + bookPerformance()
-    + editPreferences()
-    + cancelPerformance(performanceID: String, message: String): void
-    + cancelBooking(bookingNumber: String): void
-    + reviewPerformance(performanceID: String, rating: int, comment: String): Review
-    + sponsorPerformance(performanceID: String, amount: String): Boolean
+skinparam linetype ortho
+skinparam nodesep 50
+skinparam ranksep 50
+left to right direction
 
+' - One general controller (system entry point) that actors talk to
+' - Role/identity decides which actor-specific subcontroller handles the request
+' - Data is NOT stored in the controller; repositories hold data
+' - External systems shown as interfaces (per requirements)
+
+'========================
+' Session + Authorisation
+'========================
+class Session {
+  - currentUser: AuthenticatingUser
+  + isLoggedIn(): Boolean
+  + login(user: AuthenticatingUser): void
+  + logout(): void
+  + getCurrentUser(): AuthenticatingUser
 }
 
+class AuthorisationService {
+  + requireLoggedIn(session: Session): void
+  + requireRole(session: Session, role: UserRole): void
+}
+
+enum UserRole {
+  Student
+  AdminStaff
+  EntertainmentProvider
+}
+
+'========================
+' General controller + actor-based subcontrollers
+'========================
+class GeneralController {
+  - session: Session
+  - auth: AuthorisationService
+  - users: UserRepository
+  - events: EventRepository
+  - bookings: BookingRepository
+  - reviews: ReviewRepository
+  - studentCtrl: StudentController
+  - epCtrl: EPController
+  - adminCtrl: AdminStaffController
+
+  + login(email: String, password: String): Boolean
+  + logout(): void
+
+  + asStudent(): StudentController
+  + asEP(): EPController
+  + asAdminStaff(): AdminStaffController
+}
+
+abstract class AbstractSubController {
+  # session: Session
+  # auth: AuthorisationService
+  # users: UserRepository
+  # events: EventRepository
+  # bookings: BookingRepository
+  # reviews: ReviewRepository
+}
+
+class StudentController {
+  + searchPerformances(date: Date): Collection<Performance>
+  + viewPerformance(performanceID: String): Performance
+  + bookPerformance(performanceID: String, numTickets: int, contactEmail: String, contactPhone: String): Booking
+  + cancelBooking(bookingNumber: String): Boolean
+  + editPreferences(preferences: Collection<EventType>): void
+  + reviewPerformance(performanceID: String, rating: int, comment: String): Review
+}
+
+class EPController {
+  + registerEntertainmentProvider(name: String, businessNumber: String, description: String, email: String, password: String): Boolean
+  + createEvent(e: Event): void
+  + createPerformance(eventID: String, p: Performance): void
+  + cancelPerformance(performanceID: String, messageToStudents: String): Boolean
+}
+
+class AdminStaffController {
+  + sponsorPerformance(performanceID: String, amount: double): Boolean
+}
+
+AbstractSubController <|-- StudentController
+AbstractSubController <|-- EPController
+AbstractSubController <|-- AdminStaffController
+
+GeneralController "1" o-- "1" Session
+GeneralController "1" o-- "1" AuthorisationService
+GeneralController "1" o-- "1" UserRepository
+GeneralController "1" o-- "1" EventRepository
+GeneralController "1" o-- "1" BookingRepository
+GeneralController "1" o-- "1" ReviewRepository
+GeneralController "1" o-- "1" StudentController
+GeneralController "1" o-- "1" EPController
+GeneralController "1" o-- "1" AdminStaffController
+
+'========================
+' Repositories (data split)
+'========================
+class UserRepository {
+  - users: Collection<AuthenticatingUser>
+  + findByEmail(email: String): AuthenticatingUser
+  + addUser(u: AuthenticatingUser): void
+  + updateStudentPreferences(studentID: String, preferences: Collection<EventType>): void
+}
+
+class EventRepository {
+  - events: Collection<Event>
+  + addEvent(e: Event): void
+  + findPerformance(performanceID: String): Performance
+  + findPerformanceByEP(performanceID: String, epID: String): Performance
+  + searchPerformances(date: Date): Collection<Performance>
+  + cancelPerformance(performanceID: String): void
+  + addPerformance(eventID: String, p: Performance): void
+  + addReviewToEvent(eventID: String, review: Review): void
+  + applySponsorship(performanceID: String, amount: double): Boolean
+}
+
+class BookingRepository {
+  - bookings: Collection<Booking>
+  + addBooking(b: Booking): void
+  + findByBookingNumber(bookingNumber: String): Booking
+  + findByPerformance(performanceID: String): Collection<Booking>
+  + removeBooking(bookingNumber: String): void
+}
+
+class ReviewRepository {
+  - reviews: Collection<Review>
+  + addReview(r: Review): void
+}
+
+StudentController ..> EventRepository
+StudentController ..> BookingRepository
+StudentController ..> ReviewRepository
+StudentController ..> PaymentSystem
+
+EPController ..> EventRepository
+EPController ..> PaymentSystem
+EPController ..> VerificationSystem
+EPController ..> BookingRepository
+
+AdminStaffController ..> EventRepository
+
+
 abstract class AuthenticatingUser {
-    - userID: String
-    - email: String
-    - password: String
+  - userID: String
+  - email: String
+  - password: String
 }
 
 class EntertainmentProvider {
-    - name: String
-    - businessNumber: String
-    - description: String
+  - name: String
+  - businessNumber: String
+  - description: String
 }
 
 class AdminStaff {
 }
 
 class Student {
-    - preferences: Collection<EventType>
+  - preferences: Collection<EventType>
 }
 
 class Performance {
-    - performanceID: String
-    - startDateTime: Date
-    - endDateTime: Date 
-    - performerNames: Collection<String>
-    - ticketPrice: double
-    - sponsorshipAmount: double
-    - remainingTickets: int
-    - venueAddress: String 
-    - venueCapacity: int
-    - isOutdoor: Boolean
-    - isSmoking: Boolean
-    + applySponsorship(amount: double): void
-    + canBeSponsored(amount: double): Boolean
-    + hasTakenPlace(currentTime: Date): Boolean
-    + isSponsorable(): Boolean
-    + validate(performanceID: String): Boolean
-    + cancel(): void
+  - performanceID: String
+  - startDateTime: Date
+  - endDateTime: Date
+  - performerNames: Collection<String>
+  - ticketPrice: double
+  - sponsorshipAmount: double
+  - remainingTickets: int
+  - venueAddress: String
+  - venueCapacity: int
+  - isOutdoor: Boolean
+  - isSmoking: Boolean
+
+  + applySponsorship(amount: double): void
+  + canBeSponsored(amount: double): Boolean
+  + hasTakenPlace(currentTime: Date): Boolean
+  + isSponsorable(): Boolean
+  + cancel(): void
 }
 
 class Booking {
-    - bookingNumber: String
-    - numTickets: int
-    - studentName: String
-    - contactEmail: String
-    - contactPhone: String
-    + getBookingsFor(performanceID: String): Collection<Booking>
+  - bookingNumber: String
+  - numTickets: int
+  - studentName: String
+  - contactEmail: String
+  - contactPhone: String
+  - amountPaid: double
 }
 
 class Review {
-    - rating: int
-    - comment: String
+  - performanceID: String
+  - rating: int
+  - comment: String
 }
 
 class Event {
-    - eventID: String
-    - title: String
-    - type: EventType
-    - isTicketed: Boolean
-    + addReview(review: Review): void
-    + calculateAverageRating(): double
-}
-
-interface VerificationSystem {
-    + verifyBusiness(businessNumber: String): Boolean
-}
-
-interface PaymentSystem {
-    + processPayment(amount: double, userID: String): Boolean
-    + processRefund(bookings: Collection<Booking>, message: String): void
+  - eventID: String
+  - title: String
+  - type: EventType
+  - isTicketed: Boolean
+  + addReview(review: Review): void
+  + calculateAverageRating(): double
 }
 
 enum EventType {
-   Music
-   Theatre
-   Dance
-   Movie
-   Sports
-   Games
+  Music
+  Theatre
+  Dance
+  Movie
+  Sports
+  Games
 }
 
-
-EventsApp "1" -- "0..*" AuthenticatingUser
-EventsApp "1" -- "0..*" Event
-EventsApp ..> PaymentSystem
-EventsApp ..> VerificationSystem
-
+' User inheritance
 AuthenticatingUser <|-- AdminStaff
 AuthenticatingUser <|-- EntertainmentProvider
 AuthenticatingUser <|-- Student
 
-Student "1" -- "0..*" Review
-Student "1" -- "0..*" Booking
-
-
+' Key associations + multiplicities
+Event "0..*" -- "1" EntertainmentProvider
+Performance "0..*" -- "1" Event
 Booking "0..*" -- "1" Performance
 Review "0..*" -- "1" Performance
-Performance "0..*" -- "1" Event
-Event "0..*" -- "1" EntertainmentProvider
 Event "1" -- "0..*" Review
+Student "1" -- "0..*" Booking
+Student "1" -- "0..*" Review
 
 note right of Review
 Stored against the Event, while the linked
@@ -129,8 +238,21 @@ performance the review refers to.
 end note
 
 note right of Performance
-sponsorshipAmount stores the discount
-applied to future search, view and
-booking flows.
+No separate Venue entity (requirement).
+Venue info is stored as attributes.
 end note
+
+
+'========================
+' External systems
+'========================
+interface VerificationSystem {
+  + verifyBusiness(businessNumber: String): Boolean
+}
+
+interface PaymentSystem {
+  + processPayment(amount: double, userID: String): Boolean
+  + processRefund(amount: double, studentEmail: String, message: String): Boolean
+}
+
 @enduml
