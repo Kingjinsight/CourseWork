@@ -83,6 +83,12 @@ class AdminStaffController {
   + sponsorPerformance(performanceID: String, amount: double): Boolean
 }
 
+class EventsAppView {
+  - controller: GeneralController
+  + displayError(message: String): void
+  + displayConfirmation(message: String): void
+}
+
 AbstractSubController <|-- StudentController
 AbstractSubController <|-- EntertainmentProviderController
 AbstractSubController <|-- AdminStaffController
@@ -97,6 +103,11 @@ GeneralController "1" o-- "1" StudentController
 GeneralController "1" o-- "1" EntertainmentProviderController
 GeneralController "1" o-- "1" AdminStaffController
 
+
+EventsAppView ..> GeneralController
+EventsAppView ..> StudentController
+EventsAppView ..> EntertainmentProviderController
+EventsAppView ..> AdminStaffController
 '========================
 ' Repositories (data split)
 '========================

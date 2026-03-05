@@ -1,6 +1,7 @@
 @startuml Cancel Performance
 
 actor EntertainmentProvider
+participant EventsAppView
 participant GeneralController
 participant AuthorisationService
 participant EntertainmentProviderController
@@ -9,23 +10,29 @@ participant BookingRepository
 participant PaymentSystem
 participant Performance
 
-activate GeneralController
+activate EventsAppView
 
-EntertainmentProvider -> GeneralController: asEP()
+EntertainmentProvider -> EventsAppView: cancelPerformance(performanceID, messageToStudents)
+
+EventsAppView -> GeneralController: asEP()
+activate GeneralController
 GeneralController -> AuthorisationService: requireRole(session, EntertainmentProvider)
 activate AuthorisationService
 
 alt not logged in or wrong role
     AuthorisationService --> GeneralController: error
     deactivate AuthorisationService
-    GeneralController --> EntertainmentProvider: error, not authorised
+    GeneralController --> EventsAppView: error
+    deactivate GeneralController
+    EventsAppView --> EntertainmentProvider: error, not authorised
 else authorised
     AuthorisationService --> GeneralController: ok
     deactivate AuthorisationService
-    GeneralController --> EntertainmentProvider: EntertainmentProviderController
+    GeneralController --> EventsAppView: EntertainmentProviderController
+    deactivate GeneralController
 end
 
-EntertainmentProvider -> EntertainmentProviderController: cancelPerformance(performanceID, messageToStudents)
+EventsAppView -> EntertainmentProviderController: cancelPerformance(performanceID, messageToStudents)
 activate EntertainmentProviderController
 
 EntertainmentProviderController -> EventRepository: findPerformanceByEP(performanceID, epID)
@@ -34,7 +41,8 @@ EventRepository --> EntertainmentProviderController: performance
 deactivate EventRepository
 
 alt performance not found
-    EntertainmentProviderController --> EntertainmentProvider: false (invalid performanceID or not owned)
+    EntertainmentProviderController --> EventsAppView: false (invalid performanceID or not owned)
+    EventsAppView --> EntertainmentProvider: error, invalid performance
 else performance found
     EntertainmentProviderController -> Performance: hasTakenPlace(currentTime)
     activate Performance
@@ -42,7 +50,8 @@ else performance found
     deactivate Performance
 
     alt performance has already taken place
-        EntertainmentProviderController --> EntertainmentProvider: false (already taken place)
+        EntertainmentProviderController --> EventsAppView: false (already taken place)
+        EventsAppView --> EntertainmentProvider: error, already taken place
     else performance has not taken place
         EntertainmentProviderController -> BookingRepository: findByPerformance(performanceID)
         activate BookingRepository
@@ -54,10 +63,12 @@ else performance found
             activate EventRepository
             EventRepository --> EntertainmentProviderController: done
             deactivate EventRepository
-            EntertainmentProviderController --> EntertainmentProvider: true
+            EntertainmentProviderController --> EventsAppView: true
+            EventsAppView --> EntertainmentProvider: confirmation
         else has bookings
             alt messageToStudents is empty
-                EntertainmentProviderController --> EntertainmentProvider: false (message required)
+                EntertainmentProviderController --> EventsAppView: false (message required)
+                EventsAppView --> EntertainmentProvider: error, message required
             else message is valid
                 loop for each booking
                     EntertainmentProviderController -> PaymentSystem: processRefund(booking.amountPaid, booking.contactEmail, messageToStudents)
@@ -78,9 +89,11 @@ else performance found
                     activate EventRepository
                     EventRepository --> EntertainmentProviderController: done
                     deactivate EventRepository
-                    EntertainmentProviderController --> EntertainmentProvider: true
+                    EntertainmentProviderController --> EventsAppView: true
+                    EventsAppView --> EntertainmentProvider: confirmation + refunds processed
                 else any refund failed
-                    EntertainmentProviderController --> EntertainmentProvider: false (refund failed)
+                    EntertainmentProviderController --> EventsAppView: false (refund failed)
+                    EventsAppView --> EntertainmentProvider: error, cannot cancel
                 end
             end
         end
@@ -88,6 +101,6 @@ else performance found
 end
 
 deactivate EntertainmentProviderController
-deactivate GeneralController
+deactivate EventsAppView
 
 @enduml
