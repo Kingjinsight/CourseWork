@@ -48,6 +48,8 @@ class GeneralController {
 
   + login(email: String, password: String): Boolean
   + logout(): void
+  + searchPerformances(date: Date): Collection<Performance>
+  + viewPerformance(performanceID: String): Performance
 
   + asStudent(): StudentController
   + asEP(): EPController
@@ -64,8 +66,6 @@ abstract class AbstractSubController {
 }
 
 class StudentController {
-  + searchPerformances(date: Date): Collection<Performance>
-  + viewPerformance(performanceID: String): Performance
   + bookPerformance(performanceID: String, numTickets: int, contactEmail: String, contactPhone: String): Booking
   + cancelBooking(bookingNumber: String): Boolean
   + editPreferences(preferences: Collection<EventType>): void
@@ -132,11 +132,15 @@ class ReviewRepository {
   + addReview(r: Review): void
 }
 
+GeneralController ..> EventRepository : searchPerformances / viewPerformance
+GeneralController ..> UserRepository : login
+StudentController ..> UserRepository : editPreferences
 StudentController ..> EventRepository
 StudentController ..> BookingRepository
 StudentController ..> ReviewRepository
 StudentController ..> PaymentSystem
 
+EPController ..> UserRepository : registerEntertainmentProvider
 EPController ..> EventRepository
 EPController ..> PaymentSystem
 EPController ..> VerificationSystem
