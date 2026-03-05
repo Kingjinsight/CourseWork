@@ -1,55 +1,89 @@
 @startuml Sponsor Performance
 
 actor AdminStaff
-participant EventsApp
+participant GeneralController
+participant AuthorisationService
+participant AdminStaffController
+participant EventRepository
+participant BookingRepository
+participant PaymentSystem
 participant Performance
 
-note over AdminStaff, EventsApp
+note over AdminStaff
 The trigger bundles performanceID and amount
 into one message to match the coursework's
 single-threaded burst assumption.
 end note
 
-loop repeat for each sponsorship attempt
-    AdminStaff -> EventsApp: sponsorPerformance(performanceID: String, amount: String)
-    activate EventsApp
+AdminStaff -> GeneralController: asAdminStaff()
+activate AdminStaff
+activate GeneralController
+GeneralController -> AuthorisationService: requireRole(session, AdminStaff)
 
-    EventsApp -> Performance: validate(performanceID)
-    Performance --> EventsApp: isValid
+alt not logged in or wrong role
+    activate AuthorisationService
+    AuthorisationService --> GeneralController: error
+    deactivate AuthorisationService
+    GeneralController --> AdminStaff: error, not authorised
+else authorised
+    GeneralController --> AdminStaff: AdminStaffController
+    deactivate GeneralController
+end
 
-    alt invalid performanceID
-        EventsApp --> AdminStaff: error, request valid performanceID
-        deactivate EventsApp
+AdminStaff -> AdminStaffController: sponsorPerformance(performanceID, amount)
+activate AdminStaffController
 
-    else valid performanceID
-        EventsApp -> Performance: isSponsorable()
-        Performance --> EventsApp: sponsorable
 
-        alt performance belongs to a non-ticketed event
-            EventsApp --> AdminStaff: cannot sponsor a non-ticketed performance
-            deactivate EventsApp
+AdminStaffController -> EventRepository: findPerformance(performanceID)
+activate EventRepository
+EventRepository --> AdminStaffController: performance
+deactivate EventRepository
 
-        else performance can be sponsored
-            alt amount is not a valid number
-                EventsApp --> AdminStaff: error, request numeric amount
-                deactivate EventsApp
+alt performance not found
+    AdminStaffController --> AdminStaff: sponsorship failed (invalid performanceID)
+else performance found
+    AdminStaffController -> EventRepository: applySponsorship(performanceID, amount)
+    activate EventRepository
+    EventRepository -> Performance: canbeSponsored(amount)
+    activate Performance
+    Performance --> EventRepository: sponsorship eligibility
+    deactivate Performance
 
-            else amount can be parsed
-                EventsApp -> Performance: canBeSponsored(amount: double)
-                Performance --> EventsApp: amountValid
-
-                alt amount is larger than the current ticket price
-                    EventsApp --> AdminStaff: error, request smaller amount
-                    deactivate EventsApp
-
-                else valid sponsorship amount
-                    EventsApp -> Performance: applySponsorship(amount: double)
-                    EventsApp --> AdminStaff: confirmation
-                    deactivate EventsApp
+    alt sponsorship rejected
+        EventRepository --> AdminStaffController: rejected
+        AdminStaffController --> AdminStaff: sponsorship failed (invalid sponsor amount)
+    else sponsorship approved
+        EventRepository --> AdminStaffController: approved
+        deactivate EventRepository
+        AdminStaffController -> Performance: applySponsorship(amount)
+        activate Performance
+        Performance --> AdminStaffController: void
+        deactivate Performance
+        AdminStaffController -> BookingRepository: findByPerformance(performanceID)
+        activate BookingRepository
+        BookingRepository --> AdminStaffController: bookings
+        deactivate BookingRepository
+        alt has bookings
+            loop for each booking
+                AdminStaffController -> PaymentSystem: processRefund(booking.amountPaid - Performance.ticketPrice, booking.contactEmail, messageToStudents)
+                activate PaymentSystem
+                PaymentSystem --> AdminStaffController: success / failure
+                deactivate PaymentSystem
+                alt PaymentSystem success
+                    AdminStaffController-> booking: setAmountPaid(Performance.ticketPrice)
+                    activate booking
+                    booking --> AdminStaffController: void
+                    deactivate booking
+                else PaymentSystem failure
+                    AdminStaffController --> AdminStaff: sponsorship failed (refund failed)
                 end
             end
         end
-    end
+    end   
 end
+
+AdminStaffController --> AdminStaff: sponsorship successful
+deactivate AdminStaffController
+deactivate AdminStaff
 
 @enduml
