@@ -73,7 +73,7 @@ jobs:
               mkdir -p "$target_dir"
             fi
 
-            target_file="$target_dir/${base}.png"
+            target_file="$target_dir/${base}.svg"
             mmdc -i "$file" -o "$target_file" -t default -C CW2/mermaid.css -p /tmp/mermaid-puppeteer-config.json
           done < <(find CW2 -path "CW2/ExportIMG" -prune -o -type f -iname "*.mmd" -print0)
 
@@ -83,23 +83,23 @@ jobs:
             echo "No .mmd files found under CW2."
           fi
 
-      - name: Upload exported PNGs for PR checks
+      - name: Upload exported SVGs for PR checks
         if: ${{ github.event_name == 'pull_request' }}
         uses: actions/upload-artifact@v4
         with:
-          name: exported-png-pr-${{ github.event.pull_request.number }}
+          name: exported-svg-pr-${{ github.event.pull_request.number }}
           path: CW2/ExportIMG
           if-no-files-found: warn
 
-      - name: Create or update PR for exported PNGs
+      - name: Create or update PR for exported SVGs
         if: ${{ github.event_name != 'pull_request' }}
         id: cpr
         uses: peter-evans/create-pull-request@v6
         with:
-          commit-message: "chore: auto-export CW2 MMD to PNG [skip ci]"
-          title: "chore: auto-export CW2 MMD to PNG"
+          commit-message: "chore: auto-export CW2 MMD to SVG [skip ci]"
+          title: "chore: auto-export CW2 MMD to SVG"
           body: |
-            Auto-generated PNG exports from `.mmd` files under `CW2`.
+            Auto-generated SVG exports from `.mmd` files under `CW2`.
           branch: "codex/auto-export-cw2-mmd"
           delete-branch: true
           add-paths: |
