@@ -1,0 +1,60 @@
+sequenceDiagram
+title Cancel Performance
+
+actor EntertainmentProvider
+participant EventsAppView
+participant ControllerFactory
+participant EntertainmentProviderController
+participant EventRepository
+participant BookingRepository
+participant PaymentSystem
+participant Performance
+
+EntertainmentProvider ->> EventsAppView: cancelPerformance(session, performanceID, messageToStudents)
+EventsAppView ->> ControllerFactory: getController(session)
+ControllerFactory -->> EventsAppView: EntertainmentProviderController
+
+EventsAppView ->> EntertainmentProviderController: cancelPerformance(performanceID, messageToStudents)
+
+EntertainmentProviderController ->> EventRepository: findPerformanceByEP(performanceID, epID)
+alt performance not found
+    EventRepository -->> EntertainmentProviderController: error
+    EntertainmentProviderController -->> EventsAppView: displayError(error)
+    EventsAppView -->> EntertainmentProvider: error (invalid performanceID)
+else performance found
+    EventRepository -->> EntertainmentProviderController: performance
+    EntertainmentProviderController ->> Performance: hasTakenPlace(currentTime)
+    Performance -->> EntertainmentProviderController: result
+    alt has already taken place
+        EntertainmentProviderController -->> EventsAppView: displayError(already taken place)
+        EventsAppView -->> EntertainmentProvider: error (already taken place)
+    else not taken place
+        EntertainmentProviderController ->> BookingRepository: findByPerformance(performanceID)
+        BookingRepository -->> EntertainmentProviderController: bookings
+        alt no bookings
+            EntertainmentProviderController ->> EventRepository: cancelPerformance(performanceID)
+            EventRepository -->> EntertainmentProviderController: done
+            EntertainmentProviderController -->> EventsAppView: displayConfirmation(canceled)
+            EventsAppView -->> EntertainmentProvider: success
+        else has bookings
+            alt messageToStudents is empty
+                EntertainmentProviderController -->> EventsAppView: displayError(message required)
+                EventsAppView -->> EntertainmentProvider: error (message required)
+            else message valid
+                loop for each booking
+                    EntertainmentProviderController ->> PaymentSystem: processRefundWithMessage(booking.amountPaid, booking.contactInfo.name, booking.contactInfo.contactEmail, booking.contactInfo.contactPhone, messageToStudents)
+                    PaymentSystem -->> EntertainmentProviderController: success / failure
+                end
+                alt all refunds successful
+                    EntertainmentProviderController ->> EventRepository: cancelPerformance(performanceID)
+                    EventRepository -->> EntertainmentProviderController: done
+                    EntertainmentProviderController -->> EventsAppView: displayConfirmation(canceled)
+                    EventsAppView -->> EntertainmentProvider: success
+                else any refund failed
+                    EntertainmentProviderController -->> EventsAppView: displayError(refund failed)
+                    EventsAppView -->> EntertainmentProvider: error (refund failed)
+                end
+            end
+        end
+    end
+end

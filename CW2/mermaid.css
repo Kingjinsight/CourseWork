@@ -1,0 +1,7 @@
+.messageLine0 { stroke-width: 2px !important; }
+.messageLine1 { stroke-width: 2px !important; }
+.actor-line   { stroke-width: 2px !important; }
+.loopLine {
+    stroke-width: 3px !important;
+    stroke-dasharray:none !important;
+}

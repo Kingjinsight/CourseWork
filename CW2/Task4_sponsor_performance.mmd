@@ -1,0 +1,54 @@
+sequenceDiagram
+title Sponsor Performance
+
+actor AdminStaff
+participant EventsAppView
+participant ControllerFactory
+participant AdminStaffController
+participant EventRepository
+participant Performance
+
+AdminStaff ->> EventsAppView: sponsorPerformance(session, performanceID, amount)
+activate EventsAppView
+EventsAppView ->> ControllerFactory: getController(session)
+activate ControllerFactory
+ControllerFactory -->> EventsAppView: AdminStaffController
+deactivate ControllerFactory
+
+EventsAppView ->> AdminStaffController: sponsorPerformance(performanceID, amount)
+activate AdminStaffController
+
+AdminStaffController ->> EventRepository: findPerformance(performanceID)
+activate EventRepository
+alt performance not found
+    EventRepository -->> AdminStaffController: error
+    deactivate EventRepository
+    AdminStaffController -->> EventsAppView: displayError(error)
+    EventsAppView -->> AdminStaff: error (invalid performanceID)
+else performance found
+    EventRepository -->> AdminStaffController: performance
+    deactivate EventRepository
+    alt not ticketed
+        AdminStaffController -->> EventsAppView: displayError(not ticketed)
+        EventsAppView -->> AdminStaff: error (performance not ticketed)
+    else ticketed
+        AdminStaffController ->> Performance: canBeSponsored(amount)
+        activate Performance
+        Performance -->> AdminStaffController: eligible / not eligible
+        deactivate Performance
+        alt invalid amount
+            AdminStaffController -->> EventsAppView: displayError(invalid amount)
+            EventsAppView -->> AdminStaff: error (invalid amount)
+        else valid amount
+            AdminStaffController ->> EventRepository: applySponsorship(performanceID, amount)
+            activate EventRepository
+            EventRepository -->> AdminStaffController: done
+            deactivate EventRepository
+            AdminStaffController -->> EventsAppView: displayConfirmation(sponsored)
+            EventsAppView -->> AdminStaff: success
+        end
+    end
+end
+
+deactivate AdminStaffController
+deactivate EventsAppView

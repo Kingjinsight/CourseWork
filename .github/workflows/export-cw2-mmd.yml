@@ -1,0 +1,114 @@
+name: Export CW2 MMD to PNG
+
+on:
+  pull_request:
+    types:
+      - opened
+      - synchronize
+      - reopened
+      - ready_for_review
+    paths:
+      - "CW2/*.mmd"
+      - "CW2/**/*.mmd"
+      - "!CW2/*.no_render.mmd"
+      - "!CW2/**/*.no_render.mmd"
+      - ".github/workflows/export-cw2-mmd.yml"
+  push:
+    branches:
+      - main
+    paths:
+      - "CW2/*.mmd"
+      - "CW2/**/*.mmd"
+      - "!CW2/*.no_render.mmd"
+      - "!CW2/**/*.no_render.mmd"
+      - ".github/workflows/export-cw2-mmd.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  export:
+    if: ${{ github.repository == 'Inf2-SEPP-CW-2026/CourseWork' }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout branch
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event_name == 'pull_request' && format('refs/pull/{0}/head', github.event.pull_request.number) || github.ref }}
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Install Mermaid CLI
+        run: |
+          npm install -g @mermaid-js/mermaid-cli
+
+      - name: Create Puppeteer config (no sandbox)
+        run: |
+          cat > /tmp/mermaid-puppeteer-config.json <<'EOF'
+          {"args":["--no-sandbox","--disable-setuid-sandbox"]}
+          EOF
+
+      - name: Export .mmd files to CW2/ExportIMG as PNG
+        run: |
+          set -euo pipefail
+          mkdir -p CW2/ExportIMG
+          find CW2/ExportIMG -type f -name "*.png" -delete
+
+          found=0
+          while IFS= read -r -d '' file; do
+            found=1
+            relative="${file#CW2/}"
+            relative_dir="$(dirname "$relative")"
+            base="$(basename "${relative%.*}")"
+
+            if [ "$relative_dir" = "." ]; then
+              target_dir="CW2/ExportIMG"
+            else
+              target_dir="CW2/ExportIMG/$relative_dir"
+              mkdir -p "$target_dir"
+            fi
+
+            target_file="$target_dir/${base}.png"
+            mmdc -i "$file" -o "$target_file" -t default -C CW2/mermaid.css -p /tmp/mermaid-puppeteer-config.json
+          done < <(find CW2 -path "CW2/ExportIMG" -prune -o -type f -iname "*.mmd" -print0)
+
+          find CW2/ExportIMG -depth -mindepth 1 -type d -empty -delete
+
+          if [ "$found" -eq 0 ]; then
+            echo "No .mmd files found under CW2."
+          fi
+
+      - name: Upload exported PNGs for PR checks
+        if: ${{ github.event_name == 'pull_request' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: exported-png-pr-${{ github.event.pull_request.number }}
+          path: CW2/ExportIMG
+          if-no-files-found: warn
+
+      - name: Create or update PR for exported PNGs
+        if: ${{ github.event_name != 'pull_request' }}
+        id: cpr
+        uses: peter-evans/create-pull-request@v6
+        with:
+          commit-message: "chore: auto-export CW2 MMD to PNG [skip ci]"
+          title: "chore: auto-export CW2 MMD to PNG"
+          body: |
+            Auto-generated PNG exports from `.mmd` files under `CW2`.
+          branch: "codex/auto-export-cw2-mmd"
+          delete-branch: true
+          add-paths: |
+            CW2/ExportIMG
+
+      - name: Auto squash and merge PR
+        if: ${{ github.event_name != 'pull_request' && steps.cpr.outputs.pull-request-number != '' }}
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh pr merge "${{ steps.cpr.outputs.pull-request-number }}" --squash --auto --delete-branch || \
+          echo "Auto-merge skipped (likely blocked by repo rules or missing permissions)."

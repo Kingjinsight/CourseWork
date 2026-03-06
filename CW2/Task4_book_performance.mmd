@@ -1,0 +1,70 @@
+---
+config:
+  layout: elk
+---
+
+sequenceDiagram
+title Book Performance
+
+actor Student
+participant EventsAppView
+participant ControllerFactory
+participant StudentController
+participant EventRepository
+participant BookingRepository
+participant PaymentSystem
+participant Booking
+
+Student ->> EventsAppView: bookPerformance(session, performanceID, numTickets)
+activate EventsAppView
+EventsAppView ->> ControllerFactory: getController(session)
+activate ControllerFactory
+ControllerFactory -->> EventsAppView: StudentController
+deactivate ControllerFactory
+
+EventsAppView ->> StudentController: bookPerformance(performanceID, numTickets)
+activate StudentController
+
+StudentController ->> EventRepository: findPerformance(performanceID)
+activate EventRepository
+alt performance not found
+    EventRepository -->> StudentController: error
+    deactivate EventRepository
+    StudentController -->> EventsAppView: displayError(error)
+    EventsAppView -->> Student: error (invalid performanceID)
+else performance found
+    EventRepository -->> StudentController: performance
+    deactivate EventRepository
+    alt not ticketed
+        StudentController -->> EventsAppView: displayError(not ticketed)
+        EventsAppView -->> Student: error (performance not ticketed)
+    else ticketed
+        alt insufficient tickets
+            StudentController -->> EventsAppView: displayError(not enough tickets)
+            EventsAppView -->> Student: error (insufficient tickets)
+        else tickets available
+            StudentController ->> PaymentSystem: processPayment(performance.ticketPrice * numTickets, userID)
+            activate PaymentSystem
+            PaymentSystem -->> StudentController: success / failure
+            deactivate PaymentSystem
+            alt payment successful
+                StudentController ->> Booking: new(contactInfo, performanceID, numTickets)
+                activate Booking
+                Booking -->> StudentController: booking
+                deactivate Booking
+                StudentController ->> BookingRepository: addBooking(booking)
+                activate BookingRepository
+                BookingRepository -->> StudentController: bookingNumber
+                deactivate BookingRepository
+                StudentController -->> EventsAppView: displayConfirmation(bookingNumber)
+                EventsAppView -->> Student: success (booking confirmed)
+            else payment failed
+                StudentController -->> EventsAppView: displayError(payment failed)
+                EventsAppView -->> Student: error (payment failed)
+            end
+        end
+    end
+end
+
+deactivate StudentController
+deactivate EventsAppView

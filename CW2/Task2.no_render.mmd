@@ -1,0 +1,263 @@
+---
+config:
+  layout: elk
+---
+
+%%{init: {'themeVariables': {'fontSize': '8px'}}}%%
+
+classDiagram
+direction LR
+
+%% ========================
+%% Core + enums
+%% ========================
+class Session {
+  - currentUser: AuthenticatingUser [0..1]
+}
+
+class UserRole {
+  <<enumeration>>
+  Student
+  AdminStaff
+  EntertainmentProvider
+}
+
+class EventType {
+  <<enumeration>>
+  Music
+  Theatre
+  Dance
+  Movie
+  Sports
+  Games
+}
+
+%% ========================
+%% Authentication + decoupled controllers
+%% ========================
+class AbstractController {
+  <<abstract>>
+  # session: Session
+  # requireRole(role: UserRole): void
+}
+
+class AuthenticationService {
+  + login(email: String, password: String): Session
+  + logout(session: Session): void
+  + registerEntertainmentProvider(name: String, businessNumber: String, mainContactName: String, description: String, email: String, password: String): Boolean
+}
+
+class ControllerFactory {
+  + getController(session: Session): AbstractController
+  - buildStudentController(session: Session): StudentController
+  - buildEntertainmentProviderController(session: Session): EntertainmentProviderController
+  - buildAdminStaffController(session: Session): AdminStaffController
+}
+
+class StudentController {
+  + searchPerformances(date: Date): Collection[Performance]
+  + viewPerformance(performanceID: String): Performance
+  + bookPerformance(performanceID: String, numTickets: int): Booking
+  + cancelBooking(bookingNumber: String): Boolean
+  + editPreferences(preferences: Collection[EventType]): void
+  + reviewPerformance(performanceID: String, rating: int, comment: String [0..1]): Review
+}
+
+class EntertainmentProviderController {
+  + searchPerformances(date: Date): Collection[Performance]
+  + viewPerformance(performanceID: String): Performance
+  + createEvent(e: Event): void
+  + createPerformance(eventID: String, p: Performance): void
+  + cancelPerformance(performanceID: String, messageToStudents: String [0..1]): Boolean
+}
+
+class AdminStaffController {
+  + searchPerformances(date: Date): Collection[Performance]
+  + viewPerformance(performanceID: String): Performance
+  + sponsorPerformance(performanceID: String, amount: double): Boolean
+}
+
+class EventsAppView {
+  + displayError(message: String): void
+  + displayConfirmation(message: String): void
+}
+
+%% ========================
+%% Repositories (data split)
+%% ========================
+class UserRepository {
+  - users: Collection[AuthenticatingUser]
+  + findByEmail(email: String): AuthenticatingUser
+  + addUser(u: AuthenticatingUser): void
+  + updateStudentPreferences(studentID: String, preferences: Collection[EventType]): void
+}
+
+class EventRepository {
+  - events: Collection[Event]
+  + addEvent(e: Event): void
+  + findPerformance(performanceID: String): Performance
+  + findPerformanceByEP(performanceID: String, epID: String): Performance
+  + searchPerformances(date: Date): Collection[Performance]
+  + cancelPerformance(performanceID: String): void
+  + addPerformance(eventID: String, p: Performance): void
+  + addReviewToEvent(eventID: String, review: Review): void
+  + applySponsorship(performanceID: String, amount: double): Boolean
+}
+
+class BookingRepository {
+  - bookings: Collection[Booking]
+  + addBooking(b: Booking): void
+  + findByBookingNumber(bookingNumber: String): Booking
+  + findByPerformance(performanceID: String): Collection[Booking]
+  + removeBooking(bookingNumber: String): void
+}
+
+class ReviewRepository {
+  - reviews: Collection[Review]
+  + addReview(r: Review): void
+}
+
+%% ========================
+%% Domain model
+%% ========================
+class Performance {
+  - performanceID: String
+  - startDateTime: Date
+  - endDateTime: Date
+  - performerNames: Collection[String]
+  - ticketPrice: double
+  - sponsorshipAmount: double
+  - remainingTickets: int
+  - venueInfo: VenueInfo
+
+  + applySponsorship(amount: double): void
+  + canBeSponsored(amount: double): Boolean
+  + hasTakenPlace(currentTime: Date): Boolean
+  + isSponsorable(): Boolean
+  + cancel(): void
+  + isAtLeast24HoursAway(currentTime: Date): Boolean
+}
+
+class ContactInfo {
+  - name: String
+  - contactEmail: String
+  - contactPhone: String[0..1]
+}
+
+class VenueInfo {
+  - address: String
+  - capacity: int
+  - isOutdoor: Boolean
+  - isSmoking: Boolean
+}
+
+note for VenueInfo "Value object for venue details (not a separate entity)."
+
+class AuthenticatingUser {
+  <<abstract>>
+  - userID: String
+  - password: String
+  - contactInfo: ContactInfo
+  - role: UserRole
+}
+
+class EntertainmentProvider {
+  - businessNumber: String
+  - description: String
+}
+
+note for EntertainmentProvider "contactPhone is optional for EP"
+
+class AdminStaff {
+}
+
+note for AdminStaff "contactPhone and contactEmail are optional for AdminStaff"
+
+class Student {
+  - preferences: Collection[EventType]
+}
+
+class Booking {
+  - bookingNumber: String
+  - numTickets: int
+  - contactInfo: ContactInfo
+  - amountPaid: double
+}
+
+class Review {
+  - performanceID: String
+  - rating: int
+  - comment: String
+}
+
+class Event {
+  - eventID: String
+  - title: String
+  - type: EventType
+  - isTicketed: Boolean
+  + addReview(review: Review): void
+  + calculateAverageRating(): double
+}
+
+%% ========================
+%% External systems
+%% ========================
+class VerificationSystem {
+  <<interface>>
+  + verifyBusiness(businessNumber: String): Boolean
+}
+
+class PaymentSystem {
+  <<interface>>
+  + processPayment(amount: double, userID: String): Boolean
+  + processRefund(amount: double, studentName: String, studentEmail: String, studentPhone: String): Boolean
+  + processRefundWithMessage(amount: double, studentName: String, studentEmail: String, studentPhone: String, message: String): Boolean
+}
+
+%% ========================
+%% Inheritance
+%% ========================
+AuthenticatingUser <|-- AdminStaff
+AuthenticatingUser <|-- EntertainmentProvider
+AuthenticatingUser <|-- Student
+
+AbstractController <|-- StudentController
+AbstractController <|-- EntertainmentProviderController
+AbstractController <|-- AdminStaffController
+
+%% ========================
+%% Associations + dependencies
+%% ========================
+EventsAppView ..> AuthenticationService
+EventsAppView ..> ControllerFactory
+EventsAppView ..> AbstractController
+
+AuthenticationService "1" o-- "1" UserRepository
+AuthenticationService ..> VerificationSystem
+
+ControllerFactory ..> StudentController
+ControllerFactory ..> EntertainmentProviderController
+ControllerFactory ..> AdminStaffController
+
+StudentController ..> UserRepository
+StudentController ..> EventRepository
+StudentController ..> BookingRepository
+StudentController ..> ReviewRepository
+StudentController ..> PaymentSystem
+
+EntertainmentProviderController ..> EventRepository
+EntertainmentProviderController ..> BookingRepository
+EntertainmentProviderController ..> PaymentSystem
+
+AdminStaffController ..> EventRepository
+
+Event "0..*" -- "1" EntertainmentProvider
+Performance "0..*" -- "1" Event
+Booking "0..*" -- "1" Performance
+Event "1" -- "0..*" Review
+Student "1" -- "0..*" Booking
+Student "1" -- "0..*" Review
+
+note for Student "preferences size <= 3"
+note for Booking "Student name and contact details are stored as a booking-time snapshot via ContactInfo."
+note for Review "performanceID is kept as a lookup key"
