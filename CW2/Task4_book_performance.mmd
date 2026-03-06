@@ -1,0 +1,54 @@
+---
+config:
+  layout: elk
+---
+
+sequenceDiagram
+title Book Performance
+
+actor Student
+participant EventsAppView
+participant ControllerFactory
+participant StudentController
+participant EventRepository
+participant BookingRepository
+participant PaymentSystem
+participant Booking
+
+Student ->> EventsAppView: bookPerformance(session, performanceID, numTickets)
+EventsAppView ->> ControllerFactory: getController(session)
+ControllerFactory -->> EventsAppView: StudentController
+
+EventsAppView ->> StudentController: bookPerformance(performanceID, numTickets)
+
+StudentController ->> EventRepository: findPerformance(performanceID)
+alt performance not found
+    EventRepository -->> StudentController: error
+    StudentController -->> EventsAppView: displayError(error)
+    EventsAppView -->> Student: error (invalid performanceID)
+else performance found
+    EventRepository -->> StudentController: performance
+    alt not ticketed
+        StudentController -->> EventsAppView: displayError(not ticketed)
+        EventsAppView -->> Student: error (performance not ticketed)
+    else ticketed
+        alt insufficient tickets
+            StudentController -->> EventsAppView: displayError(not enough tickets)
+            EventsAppView -->> Student: error (insufficient tickets)
+        else tickets available
+            StudentController ->> PaymentSystem: processPayment(performance.ticketPrice * numTickets, userID)
+            PaymentSystem -->> StudentController: success / failure
+            alt payment successful
+                StudentController ->> Booking: new(contactInfo, performanceID, numTickets)
+                Booking -->> StudentController: booking
+                StudentController ->> BookingRepository: addBooking(booking)
+                BookingRepository -->> StudentController: bookingNumber
+                StudentController -->> EventsAppView: displayConfirmation(bookingNumber)
+                EventsAppView -->> Student: success (booking confirmed)
+            else payment failed
+                StudentController -->> EventsAppView: displayError(payment failed)
+                EventsAppView -->> Student: error (payment failed)
+            end
+        end
+    end
+end

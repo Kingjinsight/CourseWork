@@ -1,0 +1,40 @@
+sequenceDiagram
+title Sponsor Performance
+
+actor AdminStaff
+participant EventsAppView
+participant ControllerFactory
+participant AdminStaffController
+participant EventRepository
+participant Performance
+
+AdminStaff ->> EventsAppView: sponsorPerformance(session, performanceID, amount)
+EventsAppView ->> ControllerFactory: getController(session)
+ControllerFactory -->> EventsAppView: AdminStaffController
+
+EventsAppView ->> AdminStaffController: sponsorPerformance(performanceID, amount)
+
+AdminStaffController ->> EventRepository: findPerformance(performanceID)
+alt performance not found
+    EventRepository -->> AdminStaffController: error
+    AdminStaffController -->> EventsAppView: displayError(error)
+    EventsAppView -->> AdminStaff: error (invalid performanceID)
+else performance found
+    EventRepository -->> AdminStaffController: performance
+    alt not ticketed
+        AdminStaffController -->> EventsAppView: displayError(not ticketed)
+        EventsAppView -->> AdminStaff: error (performance not ticketed)
+    else ticketed
+        AdminStaffController ->> Performance: canBeSponsored(amount)
+        Performance -->> AdminStaffController: eligible / not eligible
+        alt invalid amount
+            AdminStaffController -->> EventsAppView: displayError(invalid amount)
+            EventsAppView -->> AdminStaff: error (invalid amount)
+        else valid amount
+            AdminStaffController ->> EventRepository: applySponsorship(performanceID, amount)
+            EventRepository -->> AdminStaffController: done
+            AdminStaffController -->> EventsAppView: displayConfirmation(sponsored)
+            EventsAppView -->> AdminStaff: success
+        end
+    end
+end

@@ -1,0 +1,142 @@
+---
+config:
+  layout: elk
+---
+
+%%{init: {'themeVariables': {'fontSize': '16px'}}}%%
+
+classDiagram
+direction LR
+
+%% ========================
+%% Authentication + decoupled controllers
+%% ========================
+class AbstractController {
+  <<abstract>>
+  # session: Session
+}
+
+class AuthenticationService {
+  + login(email: String, password: String): Session
+  + logout(session: Session): void
+  + registerEntertainmentProvider(name: String, businessNumber: String, mainContactName: String, description: String, email: String, password: String): Boolean
+}
+
+class ControllerFactory {
+  + getController(session: Session): AbstractController
+  - buildStudentController(session: Session): StudentController
+  - buildEntertainmentProviderController(session: Session): EntertainmentProviderController
+  - buildAdminStaffController(session: Session): AdminStaffController
+}
+
+class StudentController {
+  + searchPerformances(date: Date): Collection[Performance]
+  + viewPerformance(performanceID: String): Performance
+  + bookPerformance(performanceID: String, numTickets: int): Booking
+  + cancelBooking(bookingNumber: String): Boolean
+  + editPreferences(preferences: Collection[EventType]): void
+  + reviewPerformance(performanceID: String, rating: int, comment: String [0..1]): Review
+}
+
+class EntertainmentProviderController {
+  + searchPerformances(date: Date): Collection[Performance]
+  + viewPerformance(performanceID: String): Performance
+  + createEvent(e: Event): void
+  + createPerformance(eventID: String, p: Performance): void
+  + cancelPerformance(performanceID: String, messageToStudents: String [0..1]): Boolean
+}
+
+class AdminStaffController {
+  + searchPerformances(date: Date): Collection[Performance]
+  + viewPerformance(performanceID: String): Performance
+  + sponsorPerformance(performanceID: String, amount: double): Boolean
+}
+
+class EventsAppView {
+  + displayError(message: String): void
+  + displayConfirmation(message: String): void
+}
+
+%% ========================
+%% Repositories (data split)
+%% ========================
+class UserRepository {
+  - users: Collection[AuthenticatingUser]
+  + findByEmail(email: String): AuthenticatingUser
+  + addUser(u: AuthenticatingUser): void
+  + updateStudentPreferences(studentID: String, preferences: Collection[EventType]): void
+}
+
+class EventRepository {
+  - events: Collection[Event]
+  + addEvent(e: Event): void
+  + findPerformance(performanceID: String): Performance
+  + findPerformanceByEP(performanceID: String, epID: String): Performance
+  + searchPerformances(date: Date): Collection[Performance]
+  + cancelPerformance(performanceID: String): void
+  + addPerformance(eventID: String, p: Performance): void
+  + addReviewToEvent(eventID: String, review: Review): void
+  + applySponsorship(performanceID: String, amount: double): Boolean
+}
+
+class BookingRepository {
+  - bookings: Collection[Booking]
+  + addBooking(b: Booking): void
+  + findByBookingNumber(bookingNumber: String): Booking
+  + findByPerformance(performanceID: String): Collection[Booking]
+  + removeBooking(bookingNumber: String): void
+}
+
+class ReviewRepository {
+  - reviews: Collection[Review]
+  + addReview(r: Review): void
+}
+
+%% ========================
+%% External systems
+%% ========================
+class VerificationSystem {
+  <<interface>>
+  + verifyBusiness(businessNumber: String): Boolean
+}
+
+class PaymentSystem {
+  <<interface>>
+  + processPayment(amount: double, userID: String): Boolean
+  + processRefund(amount: double, studentName: String, studentEmail: String, studentPhone: String): Boolean
+  + processRefundWithMessage(amount: double, studentName: String, studentEmail: String, studentPhone: String, message: String): Boolean
+}
+
+%% ========================
+%% Inheritance
+%% ========================
+AbstractController <|-- StudentController
+AbstractController <|-- EntertainmentProviderController
+AbstractController <|-- AdminStaffController
+
+%% ========================
+%% Associations + dependencies
+%% ========================
+EventsAppView ..> AuthenticationService
+EventsAppView ..> ControllerFactory
+EventsAppView ..> AbstractController
+
+AuthenticationService "1" o-- "1" UserRepository
+AuthenticationService ..> VerificationSystem
+
+ControllerFactory ..> StudentController
+ControllerFactory ..> EntertainmentProviderController
+ControllerFactory ..> AdminStaffController
+
+StudentController ..> UserRepository
+StudentController ..> EventRepository
+StudentController ..> BookingRepository
+StudentController ..> ReviewRepository
+StudentController ..> PaymentSystem
+
+EntertainmentProviderController ..> EventRepository
+EntertainmentProviderController ..> BookingRepository
+EntertainmentProviderController ..> PaymentSystem
+
+AdminStaffController ..> EventRepository
+
