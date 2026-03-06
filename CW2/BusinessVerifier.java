@@ -14,6 +14,11 @@ public interface BusinessVerifier {
 /**
  * Implementation that verifies business numbers using a government registry. The registry list is
  * converted to a HashSet for constant-time lookup.
+ *
+ * Assumptions:
+ * - The government registry list is loaded once and does not change during the session/run.
+ * - No format validation is performed beyond normalization; verification only checks existence
+ *   in the registry list.
  */
 class GovernmentBusinessVerifier implements BusinessVerifier {
 
