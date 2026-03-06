@@ -75,7 +75,7 @@ jobs:
 
             target_file="$target_dir/${base}.svg"
             mmdc -i "$file" -o "$target_file" -t default -C CW2/mermaid.css -p /tmp/mermaid-puppeteer-config.json
-          done < <(find CW2 -path "CW2/ExportIMG" -prune -o -type f -iname "*.mmd" -print0)
+          done < <(find CW2 -path "CW2/ExportIMG" -prune -o -type f -iname "*.mmd" ! -iname "*.no_render.mmd" -print0)
 
           find CW2/ExportIMG -depth -mindepth 1 -type d -empty -delete
 

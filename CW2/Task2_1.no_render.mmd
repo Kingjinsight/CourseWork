@@ -3,34 +3,10 @@ config:
   layout: elk
 ---
 
-%%{init: {'themeVariables': {'fontSize': '8px'}}}%%
+%%{init: {'themeVariables': {'fontSize': '16px'}}}%%
 
 classDiagram
 direction LR
-
-%% ========================
-%% Core + enums
-%% ========================
-class Session {
-  - currentUser: AuthenticatingUser [0..1]
-}
-
-class UserRole {
-  <<enumeration>>
-  Student
-  AdminStaff
-  EntertainmentProvider
-}
-
-class EventType {
-  <<enumeration>>
-  Music
-  Theatre
-  Dance
-  Movie
-  Sports
-  Games
-}
 
 %% ========================
 %% Authentication + decoupled controllers
@@ -118,88 +94,6 @@ class ReviewRepository {
 }
 
 %% ========================
-%% Domain model
-%% ========================
-class Performance {
-  - performanceID: String
-  - startDateTime: Date
-  - endDateTime: Date
-  - performerNames: Collection[String]
-  - ticketPrice: double
-  - sponsorshipAmount: double
-  - remainingTickets: int
-  - venueInfo: VenueInfo
-
-  + applySponsorship(amount: double): void
-  + canBeSponsored(amount: double): Boolean
-  + hasTakenPlace(currentTime: Date): Boolean
-  + isSponsorable(): Boolean
-  + cancel(): void
-  + isAtLeast24HoursAway(currentTime: Date): Boolean
-}
-
-class ContactInfo {
-  - name: String
-  - contactEmail: String
-  - contactPhone: String[0..1]
-}
-
-class VenueInfo {
-  - address: String
-  - capacity: int
-  - isOutdoor: Boolean
-  - isSmoking: Boolean
-}
-
-note for VenueInfo "Value object for venue details (not a separate entity)."
-
-class AuthenticatingUser {
-  <<abstract>>
-  - userID: String
-  - password: String
-  - contactInfo: ContactInfo
-  - role: UserRole
-}
-
-class EntertainmentProvider {
-  - businessNumber: String
-  - description: String
-}
-
-note for EntertainmentProvider "contactPhone is optional for EP"
-
-class AdminStaff {
-}
-
-note for AdminStaff "contactPhone and contactEmail are optional for AdminStaff"
-
-class Student {
-  - preferences: Collection[EventType]
-}
-
-class Booking {
-  - bookingNumber: String
-  - numTickets: int
-  - contactInfo: ContactInfo
-  - amountPaid: double
-}
-
-class Review {
-  - performanceID: String
-  - rating: int
-  - comment: String
-}
-
-class Event {
-  - eventID: String
-  - title: String
-  - type: EventType
-  - isTicketed: Boolean
-  + addReview(review: Review): void
-  + calculateAverageRating(): double
-}
-
-%% ========================
 %% External systems
 %% ========================
 class VerificationSystem {
@@ -217,10 +111,6 @@ class PaymentSystem {
 %% ========================
 %% Inheritance
 %% ========================
-AuthenticatingUser <|-- AdminStaff
-AuthenticatingUser <|-- EntertainmentProvider
-AuthenticatingUser <|-- Student
-
 AbstractController <|-- StudentController
 AbstractController <|-- EntertainmentProviderController
 AbstractController <|-- AdminStaffController
@@ -251,13 +141,3 @@ EntertainmentProviderController ..> PaymentSystem
 
 AdminStaffController ..> EventRepository
 
-Event "0..*" -- "1" EntertainmentProvider
-Performance "0..*" -- "1" Event
-Booking "0..*" -- "1" Performance
-Event "1" -- "0..*" Review
-Student "1" -- "0..*" Booking
-Student "1" -- "0..*" Review
-
-note for Student "preferences size <= 3"
-note for Booking "Student name and contact details are stored as a booking-time snapshot via ContactInfo."
-note for Review "performanceID is kept as a lookup key"

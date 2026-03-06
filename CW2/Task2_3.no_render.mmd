@@ -1,0 +1,47 @@
+---
+config:
+  layout: elk
+---
+
+%%{init: {'themeVariables': {'fontSize': '16px'}}}%%
+
+classDiagram
+direction BT
+
+%% ========================
+%% Core + enums
+%% ========================
+class Session {
+  - currentUser: AuthenticatingUser [0..1]
+}
+
+class UserRole {
+  <<enumeration>>
+  Student
+  AdminStaff
+  EntertainmentProvider
+}
+
+class EventType {
+  <<enumeration>>
+  Music
+  Theatre
+  Dance
+  Movie
+  Sports
+  Games
+}
+
+
+class ContactInfo {
+  - name: String
+  - contactEmail: String
+  - contactPhone: String[0..1]
+}
+
+class VenueInfo {
+  - address: String
+  - capacity: int
+  - isOutdoor: Boolean
+  - isSmoking: Boolean
+}
