@@ -2,17 +2,16 @@ import java.util.HashSet;
 import java.util.List;
 
 
-public interface task5 {
+public interface BusinessVerifier {
     boolean verifyBusiness(String businessNumber);
 }
 
 // Converts the government's primitive list into a HashSet for O(1) lookup.
-class BusinessVerifier implements task5 {
-
+class GovernmentBusinessVerifier implements BusinessVerifier {
     private final String location;
     private final HashSet<String> validNumbers;
 
-    public BusinessVerifier(String location, List<String> governmentList) {
+    public GovernmentBusinessVerifier(String location, List<String> governmentList) {
         this.location = location;
         this.validNumbers = new HashSet<>();
         for (String number : governmentList) {
