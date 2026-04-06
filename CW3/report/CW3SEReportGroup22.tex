@@ -125,18 +125,28 @@ should be on concrete system decisions.
 
 \subsection{Reflection on Teamwork}
 
-\textbf{Suggested structure:}
-\begin{itemize}
-  \item Experience: how the team organised itself
-  \item Reflection on action: what worked and what did not
-  \item Theory: what was learned about collaboration
-  \item Preparation: what would be done differently next time
-\end{itemize}
-
 \noindent
-\textbf{Word limit: 250 words maximum}
 
-\vspace{10em}
+\textbf{The Experience}
+Our team first established a workflow using Git and GitHub with a fork-and-pull-request model.
+We also built a CI check action for coursework. For Task 1, we began by dividing the use cases across the team before any implementation.
+Once the use cases were divided, we wrote placeholder functions in all controller and model files.
+This approach enabled a unified interface and facilitated assigning specific functions to each team member based on their use cases.
+
+\textbf{Reflection on Action}
+By using placeholder functions and assigning ownership from the start, we rarely encountered merge conflicts, as we seldom modified the same files or functions simultaneously.
+This time, our engagement exceeded that of previous coursework, leading to improved output.
+We also implemented code review via pull requests, which was particularly important.
+In a complex MVC system with shared data structures and interdependent controllers, this ensured teammates understood each other's APIs and data structures before integrating changes.
+Our GitHub action CI check verified that CW3 files were modified, that all tests passed, and that the submission ZIP was built, which offers a convenient double-check after work.
+
+\textbf{Theory}
+We learned that defining function signatures early helps parallel development by reducing conflicts and forcing agreement on interfaces.
+We also learned that code review is essential in complex systems, as it helps maintain a shared understanding across the team.
+
+\textbf{Preparation}
+Next time, we will adopt a Kanban-style task board to make the flow of work more visible and surface dependencies between teammates earlier,
+rather than relying solely on ad-hoc messaging.
 
 \subsection{Reflection on the Quality of the Work and Quality Attributes}
 
