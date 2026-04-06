@@ -1,5 +1,7 @@
 package uk.ac.ed.inf.eventsapp.controller;
 
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.LocalDateTime;
 import java.util.Collection;
 
@@ -9,6 +11,7 @@ import uk.ac.ed.inf.eventsapp.model.BookingStatus;
 import uk.ac.ed.inf.eventsapp.model.Event;
 import uk.ac.ed.inf.eventsapp.model.Performance;
 import uk.ac.ed.inf.eventsapp.model.Student;
+import uk.ac.ed.inf.eventsapp.util.InputParsers;
 import uk.ac.ed.inf.eventsapp.view.View;
 
 /**
@@ -17,6 +20,7 @@ import uk.ac.ed.inf.eventsapp.view.View;
 public class BookingController extends Controller {
   private long nextBookingNumber;
   private final PaymentSystem paymentSystem;
+  @SuppressWarnings("unused")
   private final Collection<Event> events;
   private final Collection<Performance> performances;
   private final Collection<Booking> bookings;
@@ -33,43 +37,53 @@ public class BookingController extends Controller {
 
   /** Prompts student to select a performance and ticket count, then processes payment. */
   public void bookPerformance() {
-    Performance performance = null;
-    boolean bookingPossible = false;
-    int numTicketsRequested = 0;
-
     if (!checkCurrentUserIsStudent()) {
       view.displayError("Only students can book performances.");
       return;
     }
 
-    while (performance == null || !bookingPossible) {
-      long performanceID;
-      try {
-        performanceID = Long.parseLong(view.getInput("Enter performance ID"));
-      } catch (NumberFormatException e) {
+    Performance performance = null;
+    while (performance == null) {
+      Long performanceID = InputParsers.parsePositiveLong(view.getInput("Enter performance ID"));
+      if (performanceID == null) {
         view.displayError("Invalid performance ID");
         continue;
       }
 
-      try {
-        numTicketsRequested = Integer.parseInt(view.getInput("Enter number of tickets"));
-      } catch (NumberFormatException e) {
+      performance = getPerformanceByID(performanceID);
+      if (performance == null) {
+        view.displayError("Performance with given number does not exist.");
+      }
+    }
+
+    boolean isTicketed = performance.checkIfEventIsTicketed();
+    if (!isTicketed) {
+      view.displayError(
+          "The requested performance's event is not ticketed. There is no need to book it.");
+      return;
+    }
+
+    int numTicketsRequested = 0;
+    boolean bookingPossible = false;
+    while (!bookingPossible) {
+      Integer parsedTicketCount =
+          InputParsers.parsePositiveInteger(view.getInput("Enter number of tickets"));
+      if (parsedTicketCount == null) {
         view.displayError("Invalid number of tickets");
         continue;
       }
 
-      performance = getPerformanceByID(performanceID);
-      bookingPossible = false;
-
-      if (performance == null) {
-        view.displayError("Performance with given number does not exist.");
-      } else {
-        bookingPossible = checkIfBookingPossible(performance, numTicketsRequested);
-      }
+      numTicketsRequested = parsedTicketCount;
+      bookingPossible = checkIfBookingPossible(performance, numTicketsRequested);
     }
 
     Student student = (Student) getCurrentUser();
-    double amountPaid = numTicketsRequested * performance.getFinalTicketPrice();
+    double amountPaid = BigDecimal.valueOf(performance.getFinalTicketPrice())
+        .multiply(BigDecimal.valueOf(numTicketsRequested)).setScale(2, RoundingMode.HALF_UP)
+        .doubleValue(); // floating point precision
+    /*
+     * jshell> System.out.println(0.1 * 3); 0.30000000000000004
+     */
 
     Booking booking = new Booking(getNextBookingNumber(), numTicketsRequested, amountPaid,
         LocalDateTime.now(), BookingStatus.ACTIVE, student, performance);
@@ -94,9 +108,11 @@ public class BookingController extends Controller {
     }
   }
 
+  @SuppressWarnings("unused")
   public void reviewPerformance() {
+    // Review performance is a 4-person-group-only use case and is intentionally left
+    // unimplemented in the current 3-person-group submission.
     throw new UnsupportedOperationException("reviewPerformance is not implemented yet.");
-    // no need to implement
   }
 
 
@@ -109,10 +125,9 @@ public class BookingController extends Controller {
 
     Booking booking = null;
     while (booking == null) {
-      long bookingNumber;
-      try {
-        bookingNumber = Long.parseLong(view.getInput("Enter booking number to cancel"));
-      } catch (NumberFormatException e) {
+      Long bookingNumber =
+          InputParsers.parsePositiveLong(view.getInput("Enter booking number to cancel"));
+      if (bookingNumber == null) {
         view.displayError("Invalid booking number");
         continue;
       }
@@ -125,6 +140,9 @@ public class BookingController extends Controller {
       } else if (!booking.isActive()) {
         view.displayError("Booking is not active and cannot be cancelled");
         booking = null;
+      } else if (!booking.checkMoreThan24HoursAway()) {
+        view.displayError("Booking cannot be cancelled less than 24 hours before the performance");
+        return; // terminate
       }
     }
 
@@ -138,6 +156,7 @@ public class BookingController extends Controller {
     }
 
     booking.cancelByStudent();
+    booking.getPerformance().removeNumTicketsSold(booking.getNumTickets());
     view.displaySuccess("Booking cancelled successfully.");
   }
 
@@ -155,13 +174,7 @@ public class BookingController extends Controller {
     return null;
   }
 
-  // Validates the performance is ticketed and has enough tickets remaining.
   private boolean checkIfBookingPossible(Performance performance, int numTickets) {
-    if (!performance.checkIfEventIsTicketed()) {
-      view.displayError(
-          "The requested performance's event is not ticketed. There is no need to book it.");
-      return false;
-    }
     if (!performance.checkIfTicketsLeft(numTickets)) {
       view.displayError("Requested performance has no tickets left");
       return false;
@@ -169,8 +182,16 @@ public class BookingController extends Controller {
     return true;
   }
 
+  @SuppressWarnings("unused")
   private Collection<Booking> findBookingsByEventID(long eventID) {
-    throw new UnsupportedOperationException("findBookingsByEventID is not implemented yet.");
+    Collection<Booking> matchingBookings = new java.util.ArrayList<>();
+    for (Booking booking : bookings) {
+      Performance performance = booking.getPerformance();
+      if (performance != null && performance.belongsToEvent(eventID)) {
+        matchingBookings.add(booking);
+      }
+    }
+    return matchingBookings;
   }
 
   private Booking getBookingByNumber(long bookingNumber) {
@@ -184,17 +205,5 @@ public class BookingController extends Controller {
 
   private long getNextBookingNumber() {
     return nextBookingNumber;
-  }
-
-  private PaymentSystem getPaymentSystem() {
-    return paymentSystem;
-  }
-
-  private Collection<Event> getEvents() {
-    return events;
-  }
-
-  private Collection<Booking> getBookings() {
-    return bookings;
   }
 }

@@ -34,6 +34,7 @@ public class BookPerformanceSystemTests {
   private Collection<Booking> bookings;
 
   @BeforeEach
+  @SuppressWarnings("unused")
   void setUp() {
     provider = new EntertainmentProvider("provider@gmail.com", "password", "EooEle", "123",
         "Provider", "This is EooEle");
@@ -116,7 +117,6 @@ public class BookPerformanceSystemTests {
 
   @Test
   void invalidPerformanceIdFormatShowsError() {
-    // "abc" → NumberFormatException. Then valid: ID 1, 1 ticket.
     ScriptedView view = new ScriptedView("abc", "1", "1");
     BookingController controller = new BookingController(view, new MockPaymentSystem(),
         new ArrayList<>(), performances, bookings);
@@ -130,8 +130,7 @@ public class BookPerformanceSystemTests {
 
   @Test
   void invalidTicketCountFormatShowsError() {
-    // ID 1 ok, then "abc" for tickets → error. Then valid: ID 1, 1 ticket.
-    ScriptedView view = new ScriptedView("1", "abc", "1", "1");
+    ScriptedView view = new ScriptedView("1", "abc", "1");
     BookingController controller = new BookingController(view, new MockPaymentSystem(),
         new ArrayList<>(), performances, bookings);
     controller.setCurrentUser(student);
@@ -146,7 +145,7 @@ public class BookPerformanceSystemTests {
 
   @Test
   void bookingWithNonExistentPerformanceIdShowsError() {
-    ScriptedView view = new ScriptedView("999", "1", "1", "1");
+    ScriptedView view = new ScriptedView("999", "1", "1");
     BookingController controller = new BookingController(view, new MockPaymentSystem(),
         new ArrayList<>(), performances, bookings);
     controller.setCurrentUser(student);
@@ -160,33 +159,36 @@ public class BookPerformanceSystemTests {
 
   @Test
   void bookingNonTicketedPerformanceShowsError() {
-    ScriptedView view = new ScriptedView("2", "1", "1", "1");
+    ScriptedView view = new ScriptedView("2");
     BookingController controller = new BookingController(view, new MockPaymentSystem(),
         new ArrayList<>(), performances, bookings);
     controller.setCurrentUser(student);
 
     controller.bookPerformance();
 
-    assertTrue(view.getErrorMessages().stream().anyMatch(e -> e.contains("not ticketed")),
-        "Booking a non-ticketed performance should show an error.");
+    assertEquals(
+        "ERROR: The requested performance's event is not ticketed. There is no need to book it.",
+        view.getLastErrorMessage(), "Booking a non-ticketed performance should show an error.");
   }
 
   @Test
   void bookingSoldOutPerformanceShowsError() {
     LocalDateTime start = LocalDateTime.now().plusDays(7);
     Performance soldOut = new Performance(3L, start, start.plusHours(2), List.of("Band"), "Hall",
-        50, false, false, 50, 50, 15.0, PerformanceStatus.ACTIVE, ticketedEvent);
+        50, false, false, 50, 49, 15.0, PerformanceStatus.ACTIVE, ticketedEvent);
     performances.add(soldOut);
 
-    ScriptedView view = new ScriptedView("3", "1", "1", "1");
+    ScriptedView view = new ScriptedView("3", "2", "1");
     BookingController controller = new BookingController(view, new MockPaymentSystem(),
         new ArrayList<>(), performances, bookings);
     controller.setCurrentUser(student);
 
     controller.bookPerformance();
 
-    assertTrue(view.getErrorMessages().stream().anyMatch(e -> e.contains("no tickets left")),
-        "Booking a sold-out performance should show an error.");
+    assertTrue(view.getErrorMessages().contains("ERROR: Requested performance has no tickets left"),
+        "Requesting more tickets than remain should show the no-tickets-left error.");
+    assertEquals("SUCCESS: Booking successful", view.getLastSuccessMessage(),
+        "Student should be able to retry with a smaller valid ticket count.");
   }
 
   @Test
@@ -196,15 +198,14 @@ public class BookPerformanceSystemTests {
         50, false, false, 10, 0, 15.0, PerformanceStatus.ACTIVE, ticketedEvent);
     performances.add(fewTickets);
 
-    // ID 4 (10 tickets), request 20 → error. Then ID 1, 1 ticket → success.
-    ScriptedView view = new ScriptedView("4", "20", "1", "1");
+    ScriptedView view = new ScriptedView("4", "20", "1");
     BookingController controller = new BookingController(view, new MockPaymentSystem(),
         new ArrayList<>(), performances, bookings);
     controller.setCurrentUser(student);
 
     controller.bookPerformance();
 
-    assertTrue(view.getErrorMessages().stream().anyMatch(e -> e.contains("no tickets left")),
+    assertTrue(view.getErrorMessages().contains("ERROR: Requested performance has no tickets left"),
         "Requesting more tickets than available should show an error.");
   }
 
@@ -232,7 +233,7 @@ public class BookPerformanceSystemTests {
 
     controller.bookPerformance();
 
-    assertTrue(view.getErrorMessages().stream().anyMatch(e -> e.contains("issue with payment")),
+    assertEquals("ERROR: There was an issue with payment.", view.getLastErrorMessage(),
         "Payment failure should display an error.");
   }
 

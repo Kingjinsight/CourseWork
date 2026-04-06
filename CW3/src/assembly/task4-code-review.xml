@@ -23,6 +23,7 @@
             <includes>
                 <include>uk/ac/ed/inf/eventsapp/facultypreregistration/**</include>
                 <include>uk/ac/ed/inf/eventsapp/model/User.java</include>
+                <include>uk/ac/ed/inf/eventsapp/util/PasswordUtils.java</include>
             </includes>
             <excludes>
                 <exclude>**/.DS_Store</exclude>

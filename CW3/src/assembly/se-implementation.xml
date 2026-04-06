@@ -29,6 +29,16 @@
         </fileSet>
 
         <fileSet>
+            <directory>${project.basedir}/src/main/resources</directory>
+            <outputDirectory>/src/main/resources</outputDirectory>
+            <excludes>
+                <exclude>**/.DS_Store</exclude>
+                <exclude>**/__MACOSX/**</exclude>
+                <exclude>**/._*</exclude>
+            </excludes>
+        </fileSet>
+
+        <fileSet>
             <directory>${project.basedir}/src/test/java</directory>
             <outputDirectory>/src/test/java</outputDirectory>
             <excludes>

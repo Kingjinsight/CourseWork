@@ -23,6 +23,7 @@ public class LogInSystemTests {
   private EntertainmentProvider provider;
 
   @BeforeEach
+  @SuppressWarnings("unused")
   void setUp() {
     users = new ArrayList<>();
     student =
@@ -81,7 +82,8 @@ public class LogInSystemTests {
 
   @Test
   void wrongPasswordShowsError() {
-    ScriptedView view = new ScriptedView("student@ed.ac.uk", "wrongpass");
+    ScriptedView view =
+        new ScriptedView("student@ed.ac.uk", "wrongpass", "student@ed.ac.uk", "password");
     UserController controller =
         new UserController(view, new MockVerificationSystem(), users, new ArrayList<>());
     controller.login();
@@ -91,7 +93,8 @@ public class LogInSystemTests {
 
   @Test
   void nonExistentEmailShowsError() {
-    ScriptedView view = new ScriptedView("unknown@ed.ac.uk", "password");
+    ScriptedView view =
+        new ScriptedView("unknown@ed.ac.uk", "password", "student@ed.ac.uk", "password");
     UserController controller =
         new UserController(view, new MockVerificationSystem(), users, new ArrayList<>());
     controller.login();
@@ -101,7 +104,8 @@ public class LogInSystemTests {
 
   @Test
   void loginIsCaseSensitiveForEmail() {
-    ScriptedView view = new ScriptedView("STUDENT@ED.AC.UK", "password");
+    ScriptedView view =
+        new ScriptedView("STUDENT@ED.AC.UK", "password", "student@ed.ac.uk", "password");
     UserController controller =
         new UserController(view, new MockVerificationSystem(), users, new ArrayList<>());
     controller.login();
@@ -111,11 +115,32 @@ public class LogInSystemTests {
 
   @Test
   void loginIsCaseSensitiveForPassword() {
-    ScriptedView view = new ScriptedView("student@ed.ac.uk", "PASSWORD");
+    ScriptedView view =
+        new ScriptedView("student@ed.ac.uk", "PASSWORD", "student@ed.ac.uk", "password");
     UserController controller =
         new UserController(view, new MockVerificationSystem(), users, new ArrayList<>());
     controller.login();
     assertEquals("ERROR: Invalid email or password.", view.getLastErrorMessage(),
         "Password matching should be case-sensitive.");
+  }
+
+  @Test
+  void invalidEmailFormatShowsError() {
+    ScriptedView view = new ScriptedView("not-an-email", "student@ed.ac.uk", "password");
+    UserController controller =
+        new UserController(view, new MockVerificationSystem(), users, new ArrayList<>());
+    controller.login();
+    assertEquals("ERROR: Invalid email or password.", view.getLastErrorMessage(),
+        "Invalid email format should show the generic login error.");
+  }
+
+  @Test
+  void emptyPasswordShowsError() {
+    ScriptedView view = new ScriptedView("student@ed.ac.uk", "", "student@ed.ac.uk", "password");
+    UserController controller =
+        new UserController(view, new MockVerificationSystem(), users, new ArrayList<>());
+    controller.login();
+    assertEquals("ERROR: Invalid email or password.", view.getLastErrorMessage(),
+        "Empty password should show the generic login error.");
   }
 }

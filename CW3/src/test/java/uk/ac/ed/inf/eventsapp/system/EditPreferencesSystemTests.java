@@ -19,6 +19,7 @@ public class EditPreferencesSystemTests {
   private EntertainmentProvider provider;
 
   @BeforeEach
+  @SuppressWarnings("unused")
   void setUp() {
     provider = new EntertainmentProvider("provider@gmail.com", "password", "EooEle", "123",
         "Provider", "This is EooEle");
@@ -28,7 +29,7 @@ public class EditPreferencesSystemTests {
 
   @Test
   void studentCanUpdatePreferences() {
-    ScriptedView view = new ScriptedView("11010");
+    ScriptedView view = new ScriptedView("music,dance,movie");
     UserController controller = new UserController(view, new MockVerificationSystem(),
         new ArrayList<>(), new ArrayList<>());
     controller.setCurrentUser(student);
@@ -40,8 +41,8 @@ public class EditPreferencesSystemTests {
   }
 
   @Test
-  void allZerosIsValidInput() {
-    ScriptedView view = new ScriptedView("00000");
+  void blankInputClearsPreferences() {
+    ScriptedView view = new ScriptedView("");
     UserController controller = new UserController(view, new MockVerificationSystem(),
         new ArrayList<>(), new ArrayList<>());
     controller.setCurrentUser(student);
@@ -53,8 +54,8 @@ public class EditPreferencesSystemTests {
   }
 
   @Test
-  void allOnesIsValidInput() {
-    ScriptedView view = new ScriptedView("11111");
+  void threePreferencesIsValidInput() {
+    ScriptedView view = new ScriptedView("music,theatre,sports");
     UserController controller = new UserController(view, new MockVerificationSystem(),
         new ArrayList<>(), new ArrayList<>());
     controller.setCurrentUser(student);
@@ -96,7 +97,7 @@ public class EditPreferencesSystemTests {
 
   @Test
   void invalidPreferenceInputIsRejectedAndRetried() {
-    ScriptedView view = new ScriptedView("abc", "11010");
+    ScriptedView view = new ScriptedView("abc", "music,dance,movie");
     UserController controller = new UserController(view, new MockVerificationSystem(),
         new ArrayList<>(), new ArrayList<>());
     controller.setCurrentUser(student);
@@ -110,8 +111,8 @@ public class EditPreferencesSystemTests {
   }
 
   @Test
-  void tooShortInputIsRejected() {
-    ScriptedView view = new ScriptedView("1101", "11010");
+  void moreThanThreePreferencesIsRejected() {
+    ScriptedView view = new ScriptedView("music,theatre,dance,movie", "music,dance");
     UserController controller = new UserController(view, new MockVerificationSystem(),
         new ArrayList<>(), new ArrayList<>());
     controller.setCurrentUser(student);
@@ -119,12 +120,12 @@ public class EditPreferencesSystemTests {
     controller.editPreferences();
 
     assertTrue(view.getErrorMessages().stream().anyMatch(e -> e.contains("Invalid input")),
-        "Input with wrong length (4 chars) should show an error.");
+        "More than three preferences should show an error.");
   }
 
   @Test
-  void tooLongInputIsRejected() {
-    ScriptedView view = new ScriptedView("110100", "11010");
+  void duplicatePreferencesAreRejected() {
+    ScriptedView view = new ScriptedView("music,music", "music,dance");
     UserController controller = new UserController(view, new MockVerificationSystem(),
         new ArrayList<>(), new ArrayList<>());
     controller.setCurrentUser(student);
@@ -132,12 +133,12 @@ public class EditPreferencesSystemTests {
     controller.editPreferences();
 
     assertTrue(view.getErrorMessages().stream().anyMatch(e -> e.contains("Invalid input")),
-        "Input with wrong length (6 chars) should show an error.");
+        "Duplicate preferences should show an error.");
   }
 
   @Test
-  void nonBinaryDigitsRejected() {
-    ScriptedView view = new ScriptedView("12345", "11010");
+  void unknownPreferenceIsRejected() {
+    ScriptedView view = new ScriptedView("comedy", "music,dance");
     UserController controller = new UserController(view, new MockVerificationSystem(),
         new ArrayList<>(), new ArrayList<>());
     controller.setCurrentUser(student);
@@ -145,27 +146,14 @@ public class EditPreferencesSystemTests {
     controller.editPreferences();
 
     assertTrue(view.getErrorMessages().stream().anyMatch(e -> e.contains("Invalid input")),
-        "Input with non-binary digits should show an error.");
-  }
-
-  @Test
-  void emptyStringInputIsRejected() {
-    ScriptedView view = new ScriptedView("", "11010");
-    UserController controller = new UserController(view, new MockVerificationSystem(),
-        new ArrayList<>(), new ArrayList<>());
-    controller.setCurrentUser(student);
-
-    controller.editPreferences();
-
-    assertTrue(view.getErrorMessages().stream().anyMatch(e -> e.contains("Invalid input")),
-        "Empty string should be rejected as invalid input.");
+        "Unknown event types should show an error.");
   }
 
   // --- State verification ---
 
   @Test
   void preferencesAreActuallySavedAfterUpdate() {
-    ScriptedView view = new ScriptedView("10110");
+    ScriptedView view = new ScriptedView("music,dance,movie");
     UserController controller = new UserController(view, new MockVerificationSystem(),
         new ArrayList<>(), new ArrayList<>());
     controller.setCurrentUser(student);

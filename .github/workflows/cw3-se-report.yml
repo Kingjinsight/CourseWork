@@ -35,6 +35,13 @@ jobs:
       - name: Publish PDF to tracked path
         run: cp CW3/report/build/CW3SEReportGroup22.pdf CW3/report/CW3SEReportGroup22.pdf
 
+      - name: Upload CW3 SE report artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: CW3SEReportGroup22
+          path: CW3/report/build/CW3SEReportGroup22.pdf
+          if-no-files-found: error
+
       - name: Stage generated PDF
         run: git add CW3/report/CW3SEReportGroup22.pdf
 

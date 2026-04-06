@@ -139,8 +139,11 @@ public class SearchPerformancesSystemTests {
   }
 
   @Test
-  void invalidDateFormatShowsAnErrorMessage() {
-    ScriptedView view = new ScriptedView("10-05-2026");
+  void invalidDateFormatShowsAnErrorMessageAndRequiresDateAgain() {
+    events.add(createEventWithPerformance(1L, "Spring Concert", EventType.MUSIC,
+        LocalDateTime.of(2026, 5, 10, 19, 0), LocalDateTime.of(2026, 5, 10, 21, 0), "McEwan Hall"));
+
+    ScriptedView view = new ScriptedView("10-05-2026", "2026-05-10");
     EventPerformanceController controller =
         new EventPerformanceController(view, events, performances, new MockPaymentSystem());
     controller.setCurrentUser(
@@ -148,8 +151,9 @@ public class SearchPerformancesSystemTests {
 
     controller.searchforPerformances();
 
-    assertEquals("ERROR: Date format is invalid. Use yyyy-MM-dd.", view.getLastErrorMessage());
-    assertTrue(view.getLastDisplayedPerformanceList().isEmpty());
+    assertTrue(view.getErrorMessages().contains("ERROR: Date format is invalid. Use yyyy-MM-dd."));
+    assertEquals(1, view.getLastDisplayedPerformanceList().size());
+    assertTrue(view.getLastDisplayedPerformanceList().iterator().next().contains("Spring Concert"));
   }
 
   @Test

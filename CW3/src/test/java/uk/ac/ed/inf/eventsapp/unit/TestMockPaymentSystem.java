@@ -15,6 +15,7 @@ public class TestMockPaymentSystem {
   private MockPaymentSystem paymentSystem;
 
   @BeforeEach
+  @SuppressWarnings("unused")
   void setUp() {
     paymentSystem = new MockPaymentSystem();
   }

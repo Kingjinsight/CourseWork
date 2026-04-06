@@ -15,6 +15,7 @@ import uk.ac.ed.inf.eventsapp.model.Booking;
 import uk.ac.ed.inf.eventsapp.model.Event;
 import uk.ac.ed.inf.eventsapp.model.Performance;
 import uk.ac.ed.inf.eventsapp.model.User;
+import uk.ac.ed.inf.eventsapp.view.ExitRequestedException;
 import uk.ac.ed.inf.eventsapp.view.TextUserInterface;
 import uk.ac.ed.inf.eventsapp.view.View;
 
@@ -39,6 +40,10 @@ public class Main {
     MenuController menuController =
         new MenuController(view, userController, eventPerformanceController, bookingController);
 
-    // The object graph is intentionally constructed only as a framework placeholder.
+    try {
+      menuController.mainMenu();
+    } catch (ExitRequestedException exception) {
+      System.out.println("Exiting application.");
+    }
   }
 }

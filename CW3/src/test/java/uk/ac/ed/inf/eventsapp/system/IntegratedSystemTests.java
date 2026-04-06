@@ -2,9 +2,11 @@ package uk.ac.ed.inf.eventsapp.system;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -38,8 +40,12 @@ public class IntegratedSystemTests {
   private static final String[] CREATE_TICKETED_EVENT_INPUTS =
       {"Spring Concert", "music", "yes", "1", "2026-05-10 19:00", "2026-05-10 21:00", "Hagan, Bob",
           "McEwan Hall", "500", "no", "no", "100", "15.50"};
+  private static final String[] CREATE_SPORTS_EVENT_INPUTS =
+      {"Varsity Match", "sports", "yes", "1", "2026-05-10 13:00", "2026-05-10 15:00", "Team A",
+          "Sports Hall", "300", "no", "no", "100", "10.00"};
 
   @BeforeEach
+  @SuppressWarnings("unused")
   void setUp() {
     users = new ArrayList<>();
     events = new ArrayList<>();
@@ -73,7 +79,7 @@ public class IntegratedSystemTests {
   }
 
   private UserController userController(ScriptedView view) {
-    return new UserController(view, new MockVerificationSystem(), users, events);
+    return new UserController(view, new MockVerificationSystem(), users, events, false);
   }
 
   /** Creates a ticketed event with one performance (ID=1) and returns the controller. */
@@ -81,9 +87,13 @@ public class IntegratedSystemTests {
     epController(new ScriptedView(CREATE_TICKETED_EVENT_INPUTS)).createEvent();
   }
 
-  // -------------------------------------------------------------------------
-  // EP creates event → student books
-  // -------------------------------------------------------------------------
+  private String[] concatenateInputs(String[]... blocks) {
+    List<String> concatenated = new ArrayList<>();
+    for (String[] block : blocks) {
+      concatenated.addAll(List.of(block));
+    }
+    return concatenated.toArray(String[]::new);
+  }
 
   @Test
   void studentCanBookPerformanceCreatedByProvider() {
@@ -108,10 +118,6 @@ public class IntegratedSystemTests {
         "After booking all 100 tickets, no tickets should remain.");
   }
 
-  // -------------------------------------------------------------------------
-  // EP creates event → student books → student cancels
-  // -------------------------------------------------------------------------
-
   @Test
   void studentCanCancelBookingAfterBooking() {
     createTicketedEvent();
@@ -134,10 +140,6 @@ public class IntegratedSystemTests {
     Booking booking = bookings.iterator().next();
     assertFalse(booking.isActive(), "Booking should no longer be active after student cancels.");
   }
-
-  // -------------------------------------------------------------------------
-  // EP creates event → student books → EP cancels performance
-  // -------------------------------------------------------------------------
 
   @Test
   void providerCancelsPerformanceAndBookingBecomesProviderCancelled() {
@@ -165,10 +167,6 @@ public class IntegratedSystemTests {
     Performance perf = performances.iterator().next();
     assertFalse(perf.isActive(), "Performance should no longer be active after cancellation.");
   }
-
-  // -------------------------------------------------------------------------
-  // Login → create event → logout → login as student → book
-  // -------------------------------------------------------------------------
 
   @Test
   void loginCreateEventLogoutLoginAsStudentBook() {
@@ -210,9 +208,136 @@ public class IntegratedSystemTests {
         "Student should book the performance after the full login/create/logout/login flow.");
   }
 
-  // -------------------------------------------------------------------------
-  // Sold out → second booking attempt fails
-  // -------------------------------------------------------------------------
+  @Test
+  void registerLoginCreateEventSearchAndViewPerformance() {
+    users.clear();
+    ScriptedView registrationView = new ScriptedView("newprovider@example.com", "password",
+        "Fresh Org", "1234567890", "Fresh Rep", "Runs live events");
+    UserController registrationController = userController(registrationView);
+    registrationController.registerEntertainmentProvider();
+
+    ScriptedView providerLoginView = new ScriptedView("newprovider@example.com", "password");
+    UserController providerController = userController(providerLoginView);
+    providerController.login();
+
+    EventPerformanceController epc =
+        new EventPerformanceController(new ScriptedView(CREATE_TICKETED_EVENT_INPUTS), events,
+            performances, new MockPaymentSystem());
+    epc.setCurrentUser(providerController.getCurrentUser());
+    epc.createEvent();
+
+    users.add(student);
+    ScriptedView studentLoginView = new ScriptedView("student@ed.ac.uk", "password");
+    UserController studentController = userController(studentLoginView);
+    studentController.login();
+
+    ScriptedView searchView = new ScriptedView("2026-05-10");
+    EventPerformanceController studentEventController =
+        new EventPerformanceController(searchView, events, performances, new MockPaymentSystem());
+    studentEventController.setCurrentUser(studentController.getCurrentUser());
+    studentEventController.searchforPerformances();
+
+    ScriptedView viewPerformanceView = new ScriptedView("1");
+    EventPerformanceController viewController = new EventPerformanceController(viewPerformanceView,
+        events, performances, new MockPaymentSystem());
+    viewController.setCurrentUser(studentController.getCurrentUser());
+    viewController.viewPerformance();
+
+    assertEquals("SUCCESS: Registration successful.", registrationView.getLastSuccessMessage(),
+        "A newly registered entertainment provider should be created successfully.");
+    assertEquals("SUCCESS: Login successful.", providerLoginView.getLastSuccessMessage(),
+        "The newly registered entertainment provider should be able to log in.");
+    assertEquals("SUCCESS: Login successful.", studentLoginView.getLastSuccessMessage(),
+        "The student should be able to log in before searching and viewing performances.");
+    assertEquals(1, performances.size(),
+        "One performance should exist after the newly registered provider creates an event.");
+    assertTrue(
+        searchView.getLastDisplayedPerformanceList().stream()
+            .anyMatch(info -> info.contains("Spring Concert")),
+        "The created performance should appear in search results after the chained registration, login, and creation flow.");
+    assertNotNull(viewPerformanceView.getLastDisplayedPerformance(),
+        "Viewing a searched performance should display its details.");
+    assertTrue(viewPerformanceView.getLastDisplayedPerformance().contains("Performance ID: 1"),
+        "The detailed view should include the searched performance ID.");
+    assertTrue(viewPerformanceView.getLastDisplayedPerformance().contains("Event: Spring Concert"),
+        "The detailed view should include the event title.");
+  }
+
+  @Test
+  void registerLoginCreateEventLogoutLoginSearchViewBookAndCancelBooking() {
+    users.clear();
+    ScriptedView registrationView = new ScriptedView("newprovider@example.com", "password",
+        "Fresh Org", "1234567890", "Fresh Rep", "Runs live events");
+    UserController registrationController = userController(registrationView);
+    registrationController.registerEntertainmentProvider();
+
+    ScriptedView providerLoginView = new ScriptedView("newprovider@example.com", "password");
+    UserController providerController = userController(providerLoginView);
+    providerController.login();
+
+    EventPerformanceController providerEventController =
+        new EventPerformanceController(new ScriptedView(CREATE_TICKETED_EVENT_INPUTS), events,
+            performances, new MockPaymentSystem());
+    providerEventController.setCurrentUser(providerController.getCurrentUser());
+    providerEventController.createEvent();
+
+    ScriptedView providerLogoutView = new ScriptedView();
+    UserController providerLogoutController = userController(providerLogoutView);
+    providerLogoutController.setCurrentUser(providerController.getCurrentUser());
+    providerLogoutController.logout();
+
+    users.add(student);
+    ScriptedView studentLoginView = new ScriptedView("student@ed.ac.uk", "password");
+    UserController studentController = userController(studentLoginView);
+    studentController.login();
+
+    ScriptedView searchView = new ScriptedView("2026-05-10");
+    EventPerformanceController searchController =
+        new EventPerformanceController(searchView, events, performances, new MockPaymentSystem());
+    searchController.setCurrentUser(studentController.getCurrentUser());
+    searchController.searchforPerformances();
+
+    ScriptedView viewPerformanceView = new ScriptedView("1");
+    EventPerformanceController viewController = new EventPerformanceController(viewPerformanceView,
+        events, performances, new MockPaymentSystem());
+    viewController.setCurrentUser(studentController.getCurrentUser());
+    viewController.viewPerformance();
+
+    ScriptedView bookView = new ScriptedView("1", "2");
+    BookingController bookingController =
+        new BookingController(bookView, new MockPaymentSystem(), events, performances, bookings);
+    bookingController.setCurrentUser(studentController.getCurrentUser());
+    bookingController.bookPerformance();
+
+    ScriptedView cancelView = new ScriptedView("1");
+    BookingController cancelBookingController =
+        new BookingController(cancelView, new MockPaymentSystem(), events, performances, bookings);
+    cancelBookingController.setCurrentUser(studentController.getCurrentUser());
+    cancelBookingController.cancelBooking();
+
+    assertEquals("SUCCESS: Registration successful.", registrationView.getLastSuccessMessage(),
+        "The entertainment provider should register successfully at the start of the long flow.");
+    assertEquals("SUCCESS: Login successful.", providerLoginView.getLastSuccessMessage(),
+        "The entertainment provider should log in before creating an event.");
+    assertEquals("SUCCESS: Logout successful.", providerLogoutView.getLastSuccessMessage(),
+        "The entertainment provider should be able to log out before the student logs in.");
+    assertEquals("SUCCESS: Login successful.", studentLoginView.getLastSuccessMessage(),
+        "The student should log in successfully before searching and booking.");
+    assertTrue(
+        searchView.getLastDisplayedPerformanceList().stream()
+            .anyMatch(info -> info.contains("Spring Concert")),
+        "The student should be able to find the created performance in search results.");
+    assertNotNull(viewPerformanceView.getLastDisplayedPerformance(),
+        "The student should be able to view the created performance in detail.");
+    assertEquals("SUCCESS: Booking successful", bookView.getLastSuccessMessage(),
+        "The student should be able to book the searched performance.");
+    assertEquals("SUCCESS: Booking cancelled successfully.", cancelView.getLastSuccessMessage(),
+        "The student should be able to cancel the booking at the end of the long flow.");
+    assertEquals(1, bookings.size(),
+        "Exactly one booking should have been created during the long end-to-end flow.");
+    assertFalse(bookings.iterator().next().isActive(),
+        "The booking created in the long end-to-end flow should be inactive after cancellation.");
+  }
 
   @Test
   void soldOutPerformancePreventsBooking() {
@@ -229,10 +354,6 @@ public class IntegratedSystemTests {
     assertFalse(perf.checkIfTicketsLeft(1),
         "After booking all 5 tickets, no more tickets should be available.");
   }
-
-  // -------------------------------------------------------------------------
-  // Two students book → EP cancels → all bookings inactive
-  // -------------------------------------------------------------------------
 
   @Test
   void providerCancelsPerformanceAllBookingsBecomeInactive() {
@@ -262,16 +383,32 @@ public class IntegratedSystemTests {
     }
   }
 
-  // -------------------------------------------------------------------------
-  // Student edits preferences then books
-  // -------------------------------------------------------------------------
+  @Test
+  void providerCancelsPerformanceThenStudentCanNoLongerFindItInSearch() {
+    createTicketedEvent();
+    bookingController(new ScriptedView("1", "1")).bookPerformance();
+
+    ScriptedView cancelView = new ScriptedView("1", "Cancelled by organiser");
+    epController(cancelView).cancelPerformance();
+
+    ScriptedView searchView = new ScriptedView("2026-05-10");
+    EventPerformanceController searchController =
+        new EventPerformanceController(searchView, events, performances, new MockPaymentSystem());
+    searchController.setCurrentUser(student);
+    searchController.searchforPerformances();
+
+    assertEquals("SUCCESS: Cancellation Successful!", cancelView.getLastSuccessMessage(),
+        "The provider should be able to cancel the booked performance.");
+    assertEquals("ERROR: There are no performances on that date.", searchView.getLastErrorMessage(),
+        "A cancelled performance should no longer appear in search results.");
+  }
 
   @Test
   void studentEditsPreferencesThenBooks() {
     createTicketedEvent();
 
     // Edit preferences
-    ScriptedView prefView = new ScriptedView("10110");
+    ScriptedView prefView = new ScriptedView("music,dance,movie");
     UserController uc = userController(prefView);
     uc.setCurrentUser(student);
     uc.editPreferences();
@@ -285,9 +422,56 @@ public class IntegratedSystemTests {
         "Student should still be able to book after editing preferences.");
   }
 
-  // -------------------------------------------------------------------------
-  // Wrong user type is blocked from actions
-  // -------------------------------------------------------------------------
+  @Test
+  void studentCancelsBookingThenReturnedTicketsCanBeBookedAgain() {
+    createTicketedEvent();
+
+    ScriptedView firstBookingView = new ScriptedView("1", "100");
+    bookingController(firstBookingView).bookPerformance();
+
+    ScriptedView cancelView = new ScriptedView("1");
+    bookingController(cancelView).cancelBooking();
+
+    ScriptedView secondBookingView = new ScriptedView("1", "100");
+    bookingController(secondBookingView).bookPerformance();
+
+    assertEquals("SUCCESS: Booking successful", firstBookingView.getLastSuccessMessage(),
+        "The initial booking should succeed and consume all available tickets.");
+    assertEquals("SUCCESS: Booking cancelled successfully.", cancelView.getLastSuccessMessage(),
+        "Cancelling the booking should succeed and return the tickets.");
+    assertEquals("SUCCESS: Booking successful", secondBookingView.getLastSuccessMessage(),
+        "Returned tickets should be available for booking again.");
+  }
+
+  @Test
+  void studentEditsPreferencesThenSearchesPerformances() {
+    ScriptedView createView = new ScriptedView(
+        concatenateInputs(CREATE_SPORTS_EVENT_INPUTS, CREATE_TICKETED_EVENT_INPUTS));
+    EventPerformanceController createController = epController(createView);
+    createController.createEvent();
+    createController.createEvent();
+
+    ScriptedView prefView = new ScriptedView("music");
+    UserController uc = userController(prefView);
+    uc.setCurrentUser(student);
+    uc.editPreferences();
+
+    ScriptedView searchView = new ScriptedView("2026-05-10");
+    EventPerformanceController searchController =
+        new EventPerformanceController(searchView, events, performances, new MockPaymentSystem());
+    searchController.setCurrentUser(student);
+    searchController.searchforPerformances();
+
+    assertEquals("SUCCESS: Preferences updated successfully.", prefView.getLastSuccessMessage(),
+        "Preferences update should succeed before searching.");
+    assertEquals(2, performances.size(),
+        "Two performances should exist after creating two events through the create-event use case.");
+    assertTrue(
+        new ArrayList<>(searchView.getLastDisplayedPerformanceList()).get(0)
+            .contains("Spring Concert"),
+        "After editing preferences, matching performances should be prioritised in search results.");
+  }
+
 
   @Test
   void studentCannotCreateEvent() {

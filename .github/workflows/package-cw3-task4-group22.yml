@@ -8,6 +8,7 @@ on:
       - "CW3/src/assembly/task4-code-review.xml"
       - "CW3/src/main/java/uk/ac/ed/inf/eventsapp/facultypreregistration/**"
       - "CW3/src/main/java/uk/ac/ed/inf/eventsapp/model/User.java"
+      - "CW3/src/main/java/uk/ac/ed/inf/eventsapp/util/PasswordUtils.java"
       - "CW3/src/test/java/uk/ac/ed/inf/eventsapp/system/RegisterFacultyMemberSystemTests.java"
       - "CW3/src/test/java/uk/ac/ed/inf/eventsapp/unit/TestFacultyMember.java"
       - "CW3/src/test/java/uk/ac/ed/inf/eventsapp/unit/TestRegistrationUtility.java"

@@ -1,0 +1,5 @@
+# email,passwordHash,name,phoneNumber,preferences
+student1@ed.ac.uk,sha256$WpSTAjzvdp0VBpgDIFBMuA==$Pf8WgK9wVB9vj0mD74gabctHYuUwOzexJPEKRiQhMDk=,Alice,1234567,music,theatre
+student2@ed.ac.uk,sha256$PNLgHh+rvjeUK2TCelsmsQ==$mpVZVmSEn1fYzHG4KS4aErUa1GWsZ4MUgpr4/4e4IaM=,Bob,2345678,sports
+# student1@ed.ac.uk,student1,Alice,1234567,music,theatre
+# student2@ed.ac.uk,student2,Bob,2345678,sports

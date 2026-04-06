@@ -108,7 +108,7 @@
       "label": "CW3: Package Task 4 Group 22 Zip",
       "type": "shell",
       "command": "mvn",
-        "args": [
+      "args": [
         "-q",
         "-Ptask4-code-review-zip",
         "package"
@@ -130,6 +130,128 @@
         "clear": true
       },
       "detail": "Builds CW3SECodeReviewImplementationGroup22.zip for CW3 Task 4."
+    },
+    {
+      "label": "CW3: Clean Package Main Implementation Group 22 Zip",
+      "type": "shell",
+      "command": "mvn",
+      "args": [
+        "-q",
+        "clean",
+        "-Pse-implementation-zip",
+        "package"
+      ],
+      "options": {
+        "cwd": "${workspaceFolder}/CW3",
+        "shell": {
+          "executable": "/bin/zsh",
+          "args": [
+            "-lic"
+          ]
+        }
+      },
+      "group": "build",
+      "problemMatcher": [],
+      "presentation": {
+        "reveal": "always",
+        "panel": "shared",
+        "clear": true
+      },
+      "detail": "Runs a clean package build for CW3SEImplementationGroup22.zip."
+    },
+    {
+      "label": "CW3: Clean Package Task 4 Group 22 Zip",
+      "type": "shell",
+      "command": "mvn",
+      "args": [
+        "-q",
+        "clean",
+        "-Ptask4-code-review-zip",
+        "package"
+      ],
+      "options": {
+        "cwd": "${workspaceFolder}/CW3",
+        "shell": {
+          "executable": "/bin/zsh",
+          "args": [
+            "-lic"
+          ]
+        }
+      },
+      "group": "build",
+      "problemMatcher": [],
+      "presentation": {
+        "reveal": "always",
+        "panel": "shared",
+        "clear": true
+      },
+      "detail": "Runs a clean package build for CW3SECodeReviewImplementationGroup22.zip."
+    },
+    {
+      "label": "CW3: Format SE Report",
+      "type": "shell",
+      "command": "tex-fmt",
+      "args": [
+        "--nowrap",
+        "CW3SEReportGroup22.tex"
+      ],
+      "options": {
+        "cwd": "${workspaceFolder}/CW3/report",
+        "shell": {
+          "executable": "/bin/zsh",
+          "args": [
+            "-lic"
+          ]
+        }
+      },
+      "problemMatcher": [],
+      "presentation": {
+        "reveal": "always",
+        "panel": "shared",
+        "clear": true
+      },
+      "detail": "Formats the CW3 SE report LaTeX source with tex-fmt."
+    },
+    {
+      "label": "CW3: Build SE Report PDF",
+      "type": "shell",
+      "command": "latexmk",
+      "args": [
+        "-pdf",
+        "-interaction=nonstopmode",
+        "-halt-on-error",
+        "-outdir=build",
+        "CW3SEReportGroup22.tex"
+      ],
+      "options": {
+        "cwd": "${workspaceFolder}/CW3/report",
+        "shell": {
+          "executable": "/bin/zsh",
+          "args": [
+            "-lic"
+          ]
+        }
+      },
+      "group": "build",
+      "problemMatcher": [],
+      "presentation": {
+        "reveal": "always",
+        "panel": "shared",
+        "clear": true
+      },
+      "detail": "Builds CW3SEReportGroup22.pdf into CW3/report/build."
+    },
+    {
+      "label": "CW3: Package All Deliverables Group 22",
+      "dependsOrder": "sequence",
+      "dependsOn": [
+        "CW3: Clean Package Main Implementation Group 22 Zip",
+        "CW3: Clean Package Task 4 Group 22 Zip",
+        "CW3: Format SE Report",
+        "CW3: Build SE Report PDF"
+      ],
+      "problemMatcher": [],
+      "detail": "Builds both submission ZIPs and the SE report PDF for Group 22."
     }
   ]
 }

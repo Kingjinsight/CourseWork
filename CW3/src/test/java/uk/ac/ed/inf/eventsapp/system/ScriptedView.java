@@ -33,6 +33,11 @@ final class ScriptedView implements View {
   }
 
   @Override
+  public String getInput(String inputPrompt, String promptEnd) {
+    return getInput(inputPrompt);
+  }
+
+  @Override
   public void displaySuccess(String successMessage) {
     successMessages.add("SUCCESS: " + successMessage);
   }

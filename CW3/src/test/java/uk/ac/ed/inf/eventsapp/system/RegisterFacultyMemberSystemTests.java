@@ -5,10 +5,11 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
+
 import uk.ac.ed.inf.eventsapp.facultypreregistration.FacultyMember;
 import uk.ac.ed.inf.eventsapp.facultypreregistration.RegistrationUtility;
 

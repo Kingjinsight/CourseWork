@@ -1,5 +1,7 @@
 package uk.ac.ed.inf.eventsapp.model;
 
+import uk.ac.ed.inf.eventsapp.util.PasswordUtils;
+
 /** Base type for application users. */
 public abstract class User {
   private String email;
@@ -9,14 +11,23 @@ public abstract class User {
   protected User() {}
 
   /**
+   * Creates a user shell with the supplied email only.
+   *
+   * @param email user email address
+   */
+  protected User(String email) {
+    this.email = email;
+  }
+
+  /**
    * Creates a user with the supplied credentials.
    *
    * @param email user email address
    * @param password user password used for authentication
    */
   protected User(String email, String password) {
-    this.email = email;
-    this.password = password;
+    this(email);
+    this.password = PasswordUtils.normalizePassword(password);
   }
 
   /** @return the user's email address */
@@ -31,6 +42,6 @@ public abstract class User {
    * @return {@code true} if the password matches, otherwise {@code false}
    */
   public boolean passwordMatches(String candidatePassword) {
-    return password != null && password.equals(candidatePassword);
+    return PasswordUtils.verifyPassword(candidatePassword, password);
   }
 }

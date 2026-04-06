@@ -2,12 +2,9 @@ package uk.ac.ed.inf.eventsapp.controller;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
-import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
-import java.util.regex.Pattern;
 
 import external.PaymentSystem;
 import uk.ac.ed.inf.eventsapp.model.Booking;
@@ -17,18 +14,13 @@ import uk.ac.ed.inf.eventsapp.model.EventType;
 import uk.ac.ed.inf.eventsapp.model.Performance;
 import uk.ac.ed.inf.eventsapp.model.Student;
 import uk.ac.ed.inf.eventsapp.model.StudentPreferences;
+import uk.ac.ed.inf.eventsapp.util.InputParsers;
 import uk.ac.ed.inf.eventsapp.view.View;
 
 /**
  * Handles event creation, search, view, cancellation, and sponsorship.
  */
 public class EventPerformanceController extends Controller {
-  private static final DateTimeFormatter DATE_TIME_FORMATTER =
-      DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
-  private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd");
-  private static final Pattern MONEY_PATTERN = Pattern.compile("^(?:0|[1-9]\\d*)(?:\\.\\d{1,2})?$");
-  // non-negative number with at most two decimal places
-
   private long nextEventID;
   private long nextPerformanceID;
   private final Collection<Event> events;
@@ -59,20 +51,22 @@ public class EventPerformanceController extends Controller {
       return null;
     }
 
-    EventType type = parseEventType(
-        view.getInput("Enter event type (music, theatre, dance, movie, sports, games)"));
+    EventType type = InputParsers
+        .parseEventType(view.getInput("Enter event type (music, theatre, dance, movie, sports)"));
     if (type == null) {
       view.displayError("Invalid event type.");
       return null;
     }
 
-    Boolean isTicketed = parseBoolean(view.getInput("Is the event ticketed? (yes/no)"));
+    Boolean isTicketed =
+        InputParsers.parseBoolean(view.getInput("Is the event ticketed? (yes/no)"));
     if (isTicketed == null) {
       view.displayError("Ticketed must be specified as yes or no.");
       return null;
     }
 
-    Integer performanceCount = parsePositiveInteger(view.getInput("How many performances?"));
+    Integer performanceCount =
+        InputParsers.parsePositiveInteger(view.getInput("How many performances?"));
     if (performanceCount == null) {
       view.displayError("Number of performances must be a positive integer.");
       return null;
@@ -82,16 +76,16 @@ public class EventPerformanceController extends Controller {
     long nextPerformanceId = getNextPerformanceID();
 
     for (int performanceIndex = 1; performanceIndex <= performanceCount; performanceIndex++) {
-      LocalDateTime startDateTime =
-          parseTime(view.getInput("Performance " + performanceIndex + " start (yyyy-MM-dd HH:mm)"));
-      LocalDateTime endDateTime =
-          parseTime(view.getInput("Performance " + performanceIndex + " end (yyyy-MM-dd HH:mm)"));
+      LocalDateTime startDateTime = InputParsers.parseDateTime(
+          view.getInput("Performance " + performanceIndex + " start (yyyy-MM-dd HH:mm)"));
+      LocalDateTime endDateTime = InputParsers.parseDateTime(
+          view.getInput("Performance " + performanceIndex + " end (yyyy-MM-dd HH:mm)"));
       if (startDateTime == null || endDateTime == null || !endDateTime.isAfter(startDateTime)) {
         view.displayError("Performance dates/times are invalid.");
         return null;
       }
 
-      List<String> performerNames = parsePerformerNames(
+      List<String> performerNames = InputParsers.parseCommaSeparatedValues(
           view.getInput("Performance " + performanceIndex + " performer names (comma-separated)"));
       if (performerNames.isEmpty()) {
         view.displayError("At least one performer name is required.");
@@ -105,16 +99,16 @@ public class EventPerformanceController extends Controller {
         return null;
       }
 
-      Integer venueCapacity = parsePositiveInteger(
+      Integer venueCapacity = InputParsers.parsePositiveInteger(
           view.getInput("Performance " + performanceIndex + " venue capacity"));
       if (venueCapacity == null) {
         view.displayError("Venue capacity must be a positive integer.");
         return null;
       }
 
-      Boolean venueIsOutdoors =
-          parseBoolean(view.getInput("Performance " + performanceIndex + " outdoors? (yes/no)"));
-      Boolean venueAllowsSmoking = parseBoolean(
+      Boolean venueIsOutdoors = InputParsers
+          .parseBoolean(view.getInput("Performance " + performanceIndex + " outdoors? (yes/no)"));
+      Boolean venueAllowsSmoking = InputParsers.parseBoolean(
           view.getInput("Performance " + performanceIndex + " smoking allowed? (yes/no)"));
       if (venueIsOutdoors == null || venueAllowsSmoking == null) {
         view.displayError("Venue flags must be specified as yes or no.");
@@ -124,9 +118,9 @@ public class EventPerformanceController extends Controller {
       int numTickets = 0;
       double ticketPrice = 0.0;
       if (isTicketed) {
-        Integer parsedTickets = parseNonNegativeInteger(
-            view.getInput("Performance " + performanceIndex + " remaining ticket count"));
-        Double parsedPrice = parseNonNegativeDouble(
+        Integer parsedTickets = InputParsers.parseNonNegativeInteger(
+            view.getInput("Performance " + performanceIndex + " total ticket count"));
+        Double parsedPrice = InputParsers.parseNonNegativeDouble(
             view.getInput("Performance " + performanceIndex + " ticket price"));
         if (parsedTickets == null || parsedPrice == null) {
           view.displayError(
@@ -169,10 +163,12 @@ public class EventPerformanceController extends Controller {
       return;
     }
 
-    LocalDate performanceDate = parseDate(view.getInput("Enter search date (yyyy-MM-dd)"));
-    if (performanceDate == null) {
-      view.displayError("Date format is invalid. Use yyyy-MM-dd.");
-      return;
+    LocalDate performanceDate = null;
+    while (performanceDate == null) {
+      performanceDate = InputParsers.parseDate(view.getInput("Enter search date (yyyy-MM-dd)"));
+      if (performanceDate == null) {
+        view.displayError("Date format is invalid. Use yyyy-MM-dd.");
+      }
     }
 
     Collection<String> prioritisedPerformanceInfo = new ArrayList<>();
@@ -210,16 +206,18 @@ public class EventPerformanceController extends Controller {
       return;
     }
 
-    Long performanceID = parsePositiveLong(view.getInput("Performance ID"));
-    if (performanceID == null) {
-      view.displayError("Performance ID must be a valid positive whole number.");
-      return;
-    }
+    Performance performance = null;
+    while (performance == null) {
+      Long performanceID = InputParsers.parsePositiveLong(view.getInput("Performance ID"));
+      if (performanceID == null) {
+        view.displayError("Performance ID must be a valid positive whole number.");
+        continue;
+      }
 
-    Performance performance = getPerformanceByID(performanceID);
-    if (performance == null) {
-      view.displayError("Performance not found.");
-      return;
+      performance = getPerformanceByID(performanceID);
+      if (performance == null) {
+        view.displayError("Performance not found.");
+      }
     }
 
     view.displaySpecificPerformance(performance.toString(true));
@@ -233,37 +231,73 @@ public class EventPerformanceController extends Controller {
     EntertainmentProvider ep = (EntertainmentProvider) currentUser;
 
     Performance performance = null;
-    boolean validPerformance = false;
-
-    while (performance == null || !validPerformance) {
-      Long performanceID = parsePositiveLong(view.getInput("Enter performance ID to cancel"));
+    while (performance == null) {
+      Long performanceID =
+          InputParsers.parsePositiveLong(view.getInput("Enter performance ID to cancel"));
       if (performanceID == null) {
         view.displayError("Performance ID must be a valid positive number.");
         continue;
       }
-      performance = getPerformanceByID(performanceID);
-      validPerformance = false;
 
-      if (performance == null) {
+      Performance candidatePerformance = getPerformanceByID(performanceID);
+      if (candidatePerformance == null) {
         view.displayError("Performance with given ID does not exist.");
-      } else if (!performance.checkCreatedByEP(ep.getEmail())) {
-        view.displayError("You can only cancel your own performance.");
-      } else if (!performance.checkHasNotHappenedYet()) {
-        view.displayError("Performance has already happened");
-      } else {
-        validPerformance = true;
+        continue;
       }
+
+      if (!candidatePerformance.checkCreatedByEP(ep.getEmail())) {
+        view.displayError("You can only cancel your own performance.");
+        continue;
+      }
+
+      if (!candidatePerformance.checkHasNotHappenedYet()) {
+        view.displayError("Performance has already happened");
+        continue;
+      }
+
+      performance = candidatePerformance;
     }
 
     if (performance.hasActiveBookings()) {
-      String cancellationMessage =
-          view.getInput("Enter cancellation message for affected students");
       Collection<Booking> activeBookings = performance.getActiveBookings();
+      String bookingDetailsForRefund = performance.getBookingDetailsForRefund();
+      // we need to fit the UML model, though it may not be efficient to use string to pass booking
+      // details and parse details from string for refund instead of using getter directly
+      String cancellationMessage = "";
+      while (cancellationMessage.isBlank()) {
+        cancellationMessage =
+            view.getInput("Provide a cancellation message for affected students").trim();
+        if (cancellationMessage.isBlank()) {
+          view.displayError("Cancellation message is required.");
+        }
+      }
 
-      for (Booking booking : activeBookings) {
-        boolean refundSuccessful = paymentSystem.processRefund(booking.getNumTickets(),
-            performance.getEventTitle(), booking.getStudentEmail(), booking.getStudentPhone(),
-            performance.getOrganiserEmail(), booking.getAmountPaid(), cancellationMessage);
+      if (bookingDetailsForRefund.isBlank()) {
+        view.displayError("There are no active booking details available for refund.");
+        return;
+      }
+
+      String[] refundDetailLines = bookingDetailsForRefund.split("\\R");
+      if (refundDetailLines.length != activeBookings.size()) {
+        view.displayError("Active booking refund details are inconsistent.");
+        return;
+      }
+
+      Collection<RefundDetails> refundDetailsCollection = new ArrayList<>();
+      for (String refundDetailLine : refundDetailLines) {
+        RefundDetails refundDetails = parseRefundDetails(refundDetailLine);
+        if (refundDetails == null) {
+          view.displayError("Active booking refund details are inconsistent.");
+          return;
+        }
+
+        refundDetailsCollection.add(refundDetails);
+      }
+
+      for (RefundDetails refundDetails : refundDetailsCollection) {
+        boolean refundSuccessful = paymentSystem.processRefund(refundDetails.numTickets(),
+            performance.getEventTitle(), refundDetails.studentEmail(), refundDetails.studentPhone(),
+            performance.getOrganiserEmail(), refundDetails.amountPaid(), cancellationMessage);
         if (!refundSuccessful) {
           view.displayError(
               "There was an issue with a refund. The performance cannot be cancelled.");
@@ -280,16 +314,46 @@ public class EventPerformanceController extends Controller {
     view.displaySuccess("Cancellation Successful!");
   }
 
+  private RefundDetails parseRefundDetails(String refundDetailLine) {
+    if (refundDetailLine == null || refundDetailLine.isBlank()) {
+      return null;
+    }
+
+    String[] parts = refundDetailLine.split(";", 3);
+    if (parts.length != 3) {
+      return null;
+    }
+
+    Integer numTickets = InputParsers.parsePositiveInteger(parts[0]);
+    Double amountPaid = InputParsers.parseNonNegativeDouble(parts[1]);
+    String[] studentDetails = parts[2].split("\\|", 3);
+    if (numTickets == null || amountPaid == null || studentDetails.length != 3) {
+      return null;
+    }
+
+    Integer studentPhone = InputParsers.parsePhoneNumber(studentDetails[2]);
+    if (studentDetails[1].isBlank() || studentPhone == null) {
+      return null;
+    }
+
+    return new RefundDetails(numTickets, amountPaid, studentDetails[1], studentPhone);
+  }
+
+  private record RefundDetails(int numTickets, double amountPaid, String studentEmail,
+      int studentPhone) {}
+
   @SuppressWarnings("unused")
   private Boolean checkIfSponsorshipPossible(Performance performance, int amount) {
+    // Sponsor performance is a 4-person-group-only use case and is intentionally left
+    // unimplemented in the current 3-person-group submission.
     throw new UnsupportedOperationException("checkIfSponsorshipPossible is not implemented yet.");
-    // no need to implement
   }
 
   @SuppressWarnings("unused")
-  public void sponserPeformance() {
-    throw new UnsupportedOperationException("sponserPeformance is not implemented yet.");
-    // no need to implement
+  public void sponsorPerformance() {
+    // Sponsor performance is a 4-person-group-only use case and is intentionally left
+    // unimplemented in the current 3-person-group submission.
+    throw new UnsupportedOperationException("sponsorPerformance is not implemented yet.");
   }
 
   private void addEvent(Event event) {
@@ -310,7 +374,16 @@ public class EventPerformanceController extends Controller {
   }
 
   private Event getEventByTitle(String title) {
-    throw new UnsupportedOperationException("getEventByTitle is not implemented yet.");
+    if (title == null || title.isBlank()) {
+      return null;
+    }
+
+    for (Event event : getEvents()) {
+      if (event.hasTitle(title)) {
+        return event;
+      }
+    }
+    return null;
   }
 
   private Performance getPerformanceByID(long performanceID) {
@@ -332,130 +405,6 @@ public class EventPerformanceController extends Controller {
 
   private Collection<Event> getEvents() {
     return events;
-  }
-
-  private EventType parseEventType(String rawType) {
-    if (rawType == null) {
-      return null;
-    }
-
-    String normalised = rawType.trim().toUpperCase().replace(' ', '_');
-    if (normalised.isEmpty()) {
-      return null;
-    }
-
-    if ("THEATER".equals(normalised)) { // American spelling
-      normalised = "THEATRE";
-    }
-
-    try {
-      return EventType.valueOf(normalised);
-    } catch (IllegalArgumentException exception) {
-      return null;
-    }
-  }
-
-  private Boolean parseBoolean(String rawBoolean) {
-    if (rawBoolean == null) {
-      return null;
-    }
-
-    String normalised = rawBoolean.trim().toLowerCase();
-    return switch (normalised) {
-      case "y", "yes", "true", "ticketed", "outdoors", "smoking" -> Boolean.TRUE;
-      case "n", "no", "false", "non-ticketed", "indoors", "non-smoking" -> Boolean.FALSE;
-      default -> null;
-    };
-    // robustness to common variations
-  }
-
-  private Integer parsePositiveInteger(String rawInteger) {
-    Integer parsed = parseNonNegativeInteger(rawInteger);
-    return parsed != null && parsed > 0 ? parsed : null;
-  }
-
-  private Long parsePositiveLong(String rawLong) {
-    if (rawLong == null) {
-      return null;
-    }
-
-    try {
-      long parsed = Long.parseLong(rawLong.trim());
-      return parsed > 0 ? parsed : null;
-    } catch (NumberFormatException exception) {
-      return null;
-    }
-  }
-
-  private Integer parseNonNegativeInteger(String rawInteger) {
-    if (rawInteger == null) {
-      return null;
-    }
-
-    try {
-      int parsed = Integer.parseInt(rawInteger.trim());
-      return parsed >= 0 ? parsed : null;
-    } catch (NumberFormatException exception) {
-      return null;
-    }
-  }
-
-  private Double parseNonNegativeDouble(String rawDouble) {
-    if (rawDouble == null) {
-      return null;
-    }
-
-    String trimmedValue = rawDouble.trim();
-    if (!MONEY_PATTERN.matcher(trimmedValue).matches()) {
-      return null;
-    }
-
-    try {
-      double parsed = Double.parseDouble(trimmedValue);
-      return parsed >= 0.0 ? parsed : null;
-    } catch (NumberFormatException exception) {
-      return null;
-    }
-  }
-
-  private LocalDateTime parseTime(String rawDateTime) {
-    if (rawDateTime == null) {
-      return null;
-    }
-
-    try {
-      return LocalDateTime.parse(rawDateTime.trim(), DATE_TIME_FORMATTER);
-    } catch (DateTimeParseException exception) {
-      return null;
-    }
-  }
-
-  private LocalDate parseDate(String rawDate) {
-    if (rawDate == null) {
-      return null;
-    }
-
-    try {
-      return LocalDate.parse(rawDate.trim(), DATE_FORMATTER);
-    } catch (DateTimeParseException exception) {
-      return null;
-    }
-  }
-
-  private List<String> parsePerformerNames(String rawPerformerNames) {
-    List<String> performerNames = new ArrayList<>();
-    if (rawPerformerNames == null) {
-      return performerNames;
-    }
-
-    for (String performerName : rawPerformerNames.split(",")) {
-      String trimmedPerformerName = performerName.trim();
-      if (!trimmedPerformerName.isEmpty()) {
-        performerNames.add(trimmedPerformerName);
-      }
-    }
-
-    return performerNames;
   }
 
   private boolean eventWithSameTitleHasPerformanceAtSameTimes(String title,

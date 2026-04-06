@@ -33,6 +33,7 @@ public class CancelBookingSystemTests {
   private Collection<Performance> performances;
 
   @BeforeEach
+  @SuppressWarnings("unused")
   void setUp() {
     provider = new EntertainmentProvider("provider@gmail.com", "password", "EooEle", "123",
         "Provider", "This is EooEle");
@@ -141,6 +142,8 @@ public class CancelBookingSystemTests {
 
     assertTrue(view.getErrorMessages().contains("ERROR: You can only cancel your own bookings"),
         "Student should not be able to cancel another student's booking.");
+    assertEquals("SUCCESS: Booking cancelled successfully.", view.getLastSuccessMessage(),
+        "Student should be able to retry with their own booking number.");
   }
 
   @Test
@@ -197,6 +200,31 @@ public class CancelBookingSystemTests {
         "Payment-failed booking should not be cancellable.");
   }
 
+  @Test
+  void bookingLessThan24HoursAwayCannotBeCancelled() {
+    LocalDateTime soonStart = LocalDateTime.now().plusHours(12);
+    Performance soonPerformance = new Performance(2L, soonStart, soonStart.plusHours(2),
+        List.of("Band"), "Hall", 100, false, false, 100, 2, 15.0, PerformanceStatus.ACTIVE,
+        new Event(2L, "Soon Show", EventType.MUSIC, true, provider));
+    Booking soonBooking = new Booking(2L, 2, 30.0, LocalDateTime.now(), BookingStatus.ACTIVE,
+        student, soonPerformance);
+    bookings.add(soonBooking);
+
+    ScriptedView view = new ScriptedView("2", "1");
+    BookingController controller = new BookingController(view, new MockPaymentSystem(),
+        new ArrayList<>(), performances, bookings);
+    controller.setCurrentUser(student);
+
+    controller.cancelBooking();
+
+    assertTrue(
+        view.getErrorMessages().contains(
+            "ERROR: Booking cannot be cancelled less than 24 hours before the performance"),
+        "Bookings less than 24 hours away should not be cancellable.");
+    assertTrue(soonBooking.isActive(),
+        "Booking should remain active when cancellation is blocked.");
+  }
+
   // --- Refund failure ---
 
   @Test
@@ -239,5 +267,20 @@ public class CancelBookingSystemTests {
     controller.cancelBooking();
 
     assertFalse(activeBooking.isActive(), "Booking should no longer be active after cancellation.");
+  }
+
+  @Test
+  void cancelledBookingReturnsTicketsToPerformance() {
+    performance.addNumTicketsSold(activeBooking.getNumTickets());
+
+    ScriptedView view = new ScriptedView("1");
+    BookingController controller = new BookingController(view, new MockPaymentSystem(),
+        new ArrayList<>(), performances, bookings);
+    controller.setCurrentUser(student);
+
+    controller.cancelBooking();
+
+    assertTrue(performance.checkIfTicketsLeft(100),
+        "Cancelled booking should return tickets to the performance.");
   }
 }

@@ -21,6 +21,7 @@ public class LogOutSystemTests {
   private EntertainmentProvider provider;
 
   @BeforeEach
+  @SuppressWarnings("unused")
   void setUp() {
     student =
         new Student("student@ed.ac.uk", "password", "Hagan", 1234567, new StudentPreferences());
