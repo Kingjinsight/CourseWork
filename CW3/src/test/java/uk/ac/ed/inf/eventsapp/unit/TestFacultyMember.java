@@ -10,6 +10,7 @@ import uk.ac.ed.inf.eventsapp.facultypreregistration.FacultyMember;
  * Unit tests for faculty-member accounts.
  */
 public class TestFacultyMember {
+  // Verifies that a newly created faculty account stores the login-attempt count that created it.
   @Test
   void facultyMemberTracksInitialLoginAttempts() {
     FacultyMember facultyMember =
@@ -19,6 +20,7 @@ public class TestFacultyMember {
         "A lazily created faculty account should record the triggering login attempt.");
   }
 
+  // Verifies that recording another login attempt increments the stored count.
   @Test
   void recordLoginAttemptIncrementsTheAttemptCount() {
     FacultyMember facultyMember =
@@ -30,6 +32,8 @@ public class TestFacultyMember {
         "Each additional login attempt should increment the faculty member's counter.");
   }
 
+  // Verifies that password matching succeeds when the supplied password matches the stored
+  // password.
   @Test
   void passwordMatchesReturnsTrueWhenTheProvidedPasswordMatches() {
     FacultyMember facultyMember =
@@ -39,6 +43,8 @@ public class TestFacultyMember {
         "Password matching should succeed when the supplied password matches the stored one.");
   }
 
+  // Verifies that password matching fails when the supplied password differs from the stored
+  // password.
   @Test
   void passwordMatchesReturnsFalseWhenTheProvidedPasswordDoesNotMatch() {
     FacultyMember facultyMember =

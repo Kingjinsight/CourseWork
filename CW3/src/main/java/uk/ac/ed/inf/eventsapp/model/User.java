@@ -2,12 +2,23 @@ package uk.ac.ed.inf.eventsapp.model;
 
 import uk.ac.ed.inf.eventsapp.util.PasswordUtils;
 
-/** Base type for application users. */
+/**
+ * Abstract {@code User} type
+ *
+ * <p>
+ * This base class stores the shared authentication attributes {@code email} and {@code password},
+ * and is specialised by {@link Student}, {@link AdminStaff}, and {@link EntertainmentProvider}.
+ */
 public abstract class User {
   private String email;
   private String password;
 
-  /** Creates an empty user. */
+  /**
+   * Creates an empty user placeholder instance.
+   *
+   * <p>
+   * This constructor is retained for incremental test setup.
+   */
   protected User() {}
 
   /**
@@ -30,7 +41,11 @@ public abstract class User {
     this.password = PasswordUtils.normalizePassword(password);
   }
 
-  /** @return the user's email address */
+  /**
+   * Returns the user's email address.
+   *
+   * @return the stored email address
+   */
   public String getEmail() {
     return email;
   }

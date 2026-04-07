@@ -12,12 +12,17 @@ import uk.ac.ed.inf.eventsapp.util.InputParsers;
 import uk.ac.ed.inf.eventsapp.view.View;
 
 /**
- * Shared base for the concrete controllers in the UML uk.ac.ed.inf.eventsapp.model.
+ * Shared base for the concrete controllers
  */
 public abstract class Controller {
   protected final View view;
   protected User currentUser;
 
+  /**
+   * Creates a controller that interacts through the supplied view.
+   *
+   * @param view view used to read input and display output
+   */
   protected Controller(View view) {
     this.view = view;
   }
@@ -40,18 +45,39 @@ public abstract class Controller {
     this.currentUser = currentUser;
   }
 
+  /**
+   * Checks whether the current session is unauthenticated.
+   *
+   * @return {@code true} when no user is logged in, otherwise {@code false}
+   */
   protected boolean checkCurrentUserIsGuest() {
     return currentUser == null;
   }
 
+  /**
+   * Checks whether the current user is an admin-staff member.
+   *
+   * @return {@code true} when the current user is admin staff, otherwise {@code false}
+   */
   protected boolean checkCurrentUserIsAdmin() {
     return currentUser instanceof AdminStaff;
   }
 
+  /**
+   * Checks whether the current user is a student.
+   *
+   * @return {@code true} when the current user is a student, otherwise {@code false}
+   */
   protected boolean checkCurrentUserIsStudent() {
     return currentUser instanceof Student;
   }
 
+  /**
+   * Checks whether the current user is an entertainment provider.
+   *
+   * @return {@code true} when the current user is an entertainment provider, otherwise
+   *         {@code false}
+   */
   protected boolean checkCurrentUserIsEntertainmentProvider() {
     return currentUser instanceof EntertainmentProvider;
   }

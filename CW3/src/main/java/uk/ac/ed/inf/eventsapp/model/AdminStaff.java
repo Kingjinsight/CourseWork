@@ -1,7 +1,10 @@
 package uk.ac.ed.inf.eventsapp.model;
 
 /**
- * Admin-staff user from the UML diagram.
+ * {@code AdminStaff} user
+ *
+ * <p>
+ * This subtype adds the administrator's display name on top of the shared user credentials.
  */
 public class AdminStaff extends User {
   private String name;

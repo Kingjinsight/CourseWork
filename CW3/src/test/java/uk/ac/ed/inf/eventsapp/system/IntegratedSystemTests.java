@@ -47,6 +47,7 @@ public class IntegratedSystemTests {
   @BeforeEach
   @SuppressWarnings("unused")
   void setUp() {
+    // Resets the shared collections and default users before each multi-use-case scenario.
     users = new ArrayList<>();
     events = new ArrayList<>();
     performances = new ArrayList<>();
@@ -59,10 +60,6 @@ public class IntegratedSystemTests {
     users.add(provider);
     users.add(student);
   }
-
-  // -------------------------------------------------------------------------
-  // Helpers
-  // -------------------------------------------------------------------------
 
   private EventPerformanceController epController(ScriptedView view) {
     EventPerformanceController c =
@@ -95,6 +92,7 @@ public class IntegratedSystemTests {
     return concatenated.toArray(String[]::new);
   }
 
+  // Verifies that a student can book a performance created earlier by a provider.
   @Test
   void studentCanBookPerformanceCreatedByProvider() {
     createTicketedEvent();
@@ -108,9 +106,10 @@ public class IntegratedSystemTests {
         "Exactly one booking should exist after one successful booking.");
   }
 
+  // Verifies that booking every available ticket leaves no remaining capacity.
   @Test
   void bookingAllTicketsMeansNoneLeft() {
-    createTicketedEvent(); // 100 tickets
+    createTicketedEvent();
     bookingController(new ScriptedView("1", "100")).bookPerformance();
 
     Performance perf = performances.iterator().next();
@@ -118,6 +117,7 @@ public class IntegratedSystemTests {
         "After booking all 100 tickets, no tickets should remain.");
   }
 
+  // Verifies that a student can cancel a booking that was created earlier in the same flow.
   @Test
   void studentCanCancelBookingAfterBooking() {
     createTicketedEvent();
@@ -130,6 +130,7 @@ public class IntegratedSystemTests {
         "Student should be able to cancel their booking.");
   }
 
+  // Verifies that a student-cancelled booking is no longer active after the full booking flow.
   @Test
   void cancelledBookingHasCancelledByStudentStatus() {
     createTicketedEvent();
@@ -141,6 +142,8 @@ public class IntegratedSystemTests {
     assertFalse(booking.isActive(), "Booking should no longer be active after student cancels.");
   }
 
+  // Verifies that provider cancellation deactivates bookings created earlier on the same
+  // performance.
   @Test
   void providerCancelsPerformanceAndBookingBecomesProviderCancelled() {
     createTicketedEvent();
@@ -157,6 +160,7 @@ public class IntegratedSystemTests {
         "Booking should no longer be active after EP cancels the performance.");
   }
 
+  // Verifies that a performance becomes inactive after a provider cancels it.
   @Test
   void cancelledPerformanceIsNoLongerActive() {
     createTicketedEvent();
@@ -168,16 +172,16 @@ public class IntegratedSystemTests {
     assertFalse(perf.isActive(), "Performance should no longer be active after cancellation.");
   }
 
+  // Verifies that shared controller state survives a role change across login, creation, and
+  // booking.
   @Test
   void loginCreateEventLogoutLoginAsStudentBook() {
-    // EP logs in
     ScriptedView loginView = new ScriptedView("provider@gmail.com", "password");
     UserController uc = userController(loginView);
     uc.login();
     assertEquals("SUCCESS: Login successful.", loginView.getLastSuccessMessage(),
         "EP should log in successfully.");
 
-    // EP creates event (shares performances collection)
     EventPerformanceController epc =
         new EventPerformanceController(new ScriptedView(CREATE_TICKETED_EVENT_INPUTS), events,
             performances, new MockPaymentSystem());
@@ -185,7 +189,6 @@ public class IntegratedSystemTests {
     epc.createEvent();
     assertEquals(1, performances.size(), "One performance should exist after event creation.");
 
-    // EP logs out
     ScriptedView logoutView = new ScriptedView();
     UserController uc2 = userController(logoutView);
     uc2.setCurrentUser(uc.getCurrentUser());
@@ -193,7 +196,6 @@ public class IntegratedSystemTests {
     assertEquals("SUCCESS: Logout successful.", logoutView.getLastSuccessMessage(),
         "EP should log out successfully.");
 
-    // Student logs in and books
     ScriptedView studentLoginView = new ScriptedView("student@ed.ac.uk", "password");
     UserController uc3 = userController(studentLoginView);
     uc3.login();
@@ -208,6 +210,8 @@ public class IntegratedSystemTests {
         "Student should book the performance after the full login/create/logout/login flow.");
   }
 
+  // Verifies that a newly registered provider can create a performance that a student can later
+  // find and inspect.
   @Test
   void registerLoginCreateEventSearchAndViewPerformance() {
     users.clear();
@@ -263,6 +267,8 @@ public class IntegratedSystemTests {
         "The detailed view should include the event title.");
   }
 
+  // Verifies the main happy path across registration, authentication, discovery, booking, and
+  // cancellation.
   @Test
   void registerLoginCreateEventLogoutLoginSearchViewBookAndCancelBooking() {
     users.clear();
@@ -339,22 +345,22 @@ public class IntegratedSystemTests {
         "The booking created in the long end-to-end flow should be inactive after cancellation.");
   }
 
+  // Verifies that a performance booked to capacity cannot accept additional bookings.
   @Test
   void soldOutPerformancePreventsBooking() {
-    // Create event with only 5 tickets
     String[] smallEvent = {"Small Gig", "music", "yes", "1", "2026-06-10 19:00", "2026-06-10 21:00",
         "Hagan", "Small Hall", "10", "no", "no", "5", "10.00"};
     epController(new ScriptedView(smallEvent)).createEvent();
 
-    // Student books all 5
     bookingController(new ScriptedView("1", "5")).bookPerformance();
 
-    // Verify the performance is now sold out
     Performance perf = performances.iterator().next();
     assertFalse(perf.checkIfTicketsLeft(1),
         "After booking all 5 tickets, no more tickets should be available.");
   }
 
+  // Verifies that provider cancellation deactivates every active booking on the cancelled
+  // performance.
   @Test
   void providerCancelsPerformanceAllBookingsBecomeInactive() {
     createTicketedEvent();
@@ -362,10 +368,8 @@ public class IntegratedSystemTests {
         new Student("student2@ed.ac.uk", "password", "Bob", 7654321, new StudentPreferences());
     users.add(student2);
 
-    // Student 1 books
     bookingController(new ScriptedView("1", "2")).bookPerformance();
 
-    // Student 2 books
     ScriptedView bookView2 = new ScriptedView("1", "3");
     BookingController bc2 =
         new BookingController(bookView2, new MockPaymentSystem(), events, performances, bookings);
@@ -374,7 +378,6 @@ public class IntegratedSystemTests {
 
     assertEquals(2, bookings.size(), "Two bookings should exist.");
 
-    // EP cancels
     epController(new ScriptedView("1", "Event cancelled")).cancelPerformance();
 
     for (Booking b : bookings) {
@@ -383,6 +386,7 @@ public class IntegratedSystemTests {
     }
   }
 
+  // Verifies that a cancelled performance disappears from later search results.
   @Test
   void providerCancelsPerformanceThenStudentCanNoLongerFindItInSearch() {
     createTicketedEvent();
@@ -403,11 +407,11 @@ public class IntegratedSystemTests {
         "A cancelled performance should no longer appear in search results.");
   }
 
+  // Verifies that editing preferences does not prevent a later booking flow from succeeding.
   @Test
   void studentEditsPreferencesThenBooks() {
     createTicketedEvent();
 
-    // Edit preferences
     ScriptedView prefView = new ScriptedView("music,dance,movie");
     UserController uc = userController(prefView);
     uc.setCurrentUser(student);
@@ -415,13 +419,13 @@ public class IntegratedSystemTests {
     assertEquals("SUCCESS: Preferences updated successfully.", prefView.getLastSuccessMessage(),
         "Preferences update should succeed.");
 
-    // Book performance
     ScriptedView bookView = new ScriptedView("1", "1");
     bookingController(bookView).bookPerformance();
     assertEquals("SUCCESS: Booking successful", bookView.getLastSuccessMessage(),
         "Student should still be able to book after editing preferences.");
   }
 
+  // Verifies that cancelled tickets return to the available pool for later bookings.
   @Test
   void studentCancelsBookingThenReturnedTicketsCanBeBookedAgain() {
     createTicketedEvent();
@@ -443,6 +447,7 @@ public class IntegratedSystemTests {
         "Returned tickets should be available for booking again.");
   }
 
+  // Verifies that updated preferences affect the ordering of later search results.
   @Test
   void studentEditsPreferencesThenSearchesPerformances() {
     ScriptedView createView = new ScriptedView(
@@ -473,6 +478,7 @@ public class IntegratedSystemTests {
   }
 
 
+  // Verifies that students cannot access the create-event use case.
   @Test
   void studentCannotCreateEvent() {
     ScriptedView view = new ScriptedView();
@@ -484,6 +490,7 @@ public class IntegratedSystemTests {
         view.getLastErrorMessage(), "Student should be blocked from creating events.");
   }
 
+  // Verifies that providers cannot access the book-performance use case.
   @Test
   void providerCannotBookPerformance() {
     createTicketedEvent();
@@ -496,6 +503,7 @@ public class IntegratedSystemTests {
         "Provider should be blocked from booking performances.");
   }
 
+  // Verifies that students cannot access the cancel-performance use case.
   @Test
   void studentCannotCancelPerformance() {
     createTicketedEvent();

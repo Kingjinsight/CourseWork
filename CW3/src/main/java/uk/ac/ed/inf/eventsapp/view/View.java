@@ -3,7 +3,11 @@ package uk.ac.ed.inf.eventsapp.view;
 import java.util.Collection;
 
 /**
- * User-facing output/input abstraction
+ * User-facing {@code View} abstraction
+ *
+ * <p>
+ * Controllers depend on this interface so that the command-line implementation can be replaced by
+ * scripted test doubles during system testing.
  */
 public interface View {
   /**

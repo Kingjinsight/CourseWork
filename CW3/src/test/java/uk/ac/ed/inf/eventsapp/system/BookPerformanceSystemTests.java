@@ -36,6 +36,7 @@ public class BookPerformanceSystemTests {
   @BeforeEach
   @SuppressWarnings("unused")
   void setUp() {
+    // Builds one ticketed and one non-ticketed performance for the booking scenarios.
     provider = new EntertainmentProvider("provider@gmail.com", "password", "EooEle", "123",
         "Provider", "This is EooEle");
     student =
@@ -56,8 +57,7 @@ public class BookPerformanceSystemTests {
     bookings = new ArrayList<>();
   }
 
-  // --- Test
-
+  // Verifies that a student can book an available ticketed performance.
   @Test
   void studentCanBookAvailablePerformance() {
     ScriptedView view = new ScriptedView("1", "2");
@@ -73,6 +73,7 @@ public class BookPerformanceSystemTests {
         "A booking record should be displayed after successful booking.");
   }
 
+  // Verifies that booking exactly the remaining ticket count succeeds.
   @Test
   void bookingExactlyAllRemainingTickets() {
     ScriptedView view = new ScriptedView("1", "100");
@@ -86,8 +87,7 @@ public class BookPerformanceSystemTests {
         "Booking exactly all remaining tickets should succeed.");
   }
 
-  // --- Access control ---
-
+  // Verifies that authenticated non-students cannot book performances.
   @Test
   void onlyStudentsCanBookPerformances() {
     ScriptedView view = new ScriptedView();
@@ -101,6 +101,7 @@ public class BookPerformanceSystemTests {
         "Non-students should be rejected.");
   }
 
+  // Verifies that unauthenticated users cannot book performances.
   @Test
   void guestCannotBookPerformance() {
     ScriptedView view = new ScriptedView();
@@ -113,8 +114,7 @@ public class BookPerformanceSystemTests {
         "Guest (no user) should be rejected.");
   }
 
-  // --- Input validation ---
-
+  // Verifies that invalid performance-ID input shows an error before a successful retry.
   @Test
   void invalidPerformanceIdFormatShowsError() {
     ScriptedView view = new ScriptedView("abc", "1", "1");
@@ -128,6 +128,7 @@ public class BookPerformanceSystemTests {
         "Non-numeric performance ID should show an error.");
   }
 
+  // Verifies that invalid ticket-count input shows an error before a successful retry.
   @Test
   void invalidTicketCountFormatShowsError() {
     ScriptedView view = new ScriptedView("1", "abc", "1");
@@ -141,8 +142,7 @@ public class BookPerformanceSystemTests {
         "Non-numeric ticket count should show an error.");
   }
 
-  // --- Business logic errors ---
-
+  // Verifies that an unknown performance ID shows an error before a successful retry.
   @Test
   void bookingWithNonExistentPerformanceIdShowsError() {
     ScriptedView view = new ScriptedView("999", "1", "1");
@@ -157,6 +157,7 @@ public class BookPerformanceSystemTests {
         "Non-existent performance ID should show an error.");
   }
 
+  // Verifies that non-ticketed performances cannot be booked.
   @Test
   void bookingNonTicketedPerformanceShowsError() {
     ScriptedView view = new ScriptedView("2");
@@ -171,6 +172,8 @@ public class BookPerformanceSystemTests {
         view.getLastErrorMessage(), "Booking a non-ticketed performance should show an error.");
   }
 
+  // Verifies that requesting too many tickets for a nearly sold-out performance shows an error
+  // before retrying.
   @Test
   void bookingSoldOutPerformanceShowsError() {
     LocalDateTime start = LocalDateTime.now().plusDays(7);
@@ -191,6 +194,7 @@ public class BookPerformanceSystemTests {
         "Student should be able to retry with a smaller valid ticket count.");
   }
 
+  // Verifies that requesting more tickets than remain produces the expected error.
   @Test
   void bookingMoreTicketsThanAvailableShowsError() {
     LocalDateTime start = LocalDateTime.now().plusDays(7);
@@ -209,8 +213,7 @@ public class BookPerformanceSystemTests {
         "Requesting more tickets than available should show an error.");
   }
 
-  // --- Payment failure ---
-
+  // Verifies that a payment failure leaves the booking flow in an error state.
   @Test
   void paymentFailureCancelsBooking() {
     PaymentSystem failingPayment = new PaymentSystem() {
@@ -237,8 +240,7 @@ public class BookPerformanceSystemTests {
         "Payment failure should display an error.");
   }
 
-  // --- State verification ---
-
+  // Verifies that a successful booking is stored in the shared bookings collection.
   @Test
   void successfulBookingAddsToBookingsCollection() {
     ScriptedView view = new ScriptedView("1", "2");
@@ -252,6 +254,7 @@ public class BookPerformanceSystemTests {
         "Booking should be added to the bookings collection after success.");
   }
 
+  // Verifies that the displayed booking record contains the expected student and event details.
   @Test
   void bookingRecordContainsStudentAndEventDetails() {
     ScriptedView view = new ScriptedView("1", "2");
@@ -267,6 +270,7 @@ public class BookPerformanceSystemTests {
     assertTrue(record.contains("Live Music"), "Booking record should contain event title.");
   }
 
+  // Verifies that booking a single ticket succeeds for an available performance.
   @Test
   void bookingSingleTicketSucceeds() {
     ScriptedView view = new ScriptedView("1", "1");

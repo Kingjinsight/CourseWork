@@ -23,6 +23,7 @@ public class LogOutSystemTests {
   @BeforeEach
   @SuppressWarnings("unused")
   void setUp() {
+    // Builds one student and one provider so logout can be exercised across both supported roles.
     student =
         new Student("student@ed.ac.uk", "password", "Hagan", 1234567, new StudentPreferences());
     provider = new EntertainmentProvider("provider@gmail.com", "password", "Org", "1234567890",
@@ -31,6 +32,7 @@ public class LogOutSystemTests {
 
 
 
+  // Verifies that a logged-in student can log out successfully.
   @Test
   void loggedInStudentCanLogOut() {
     ScriptedView view = new ScriptedView();
@@ -42,6 +44,7 @@ public class LogOutSystemTests {
         "Logged-in student should receive success message after logout.");
   }
 
+  // Verifies that a logged-in entertainment provider can log out successfully.
   @Test
   void loggedInProviderCanLogOut() {
     ScriptedView view = new ScriptedView();
@@ -53,6 +56,7 @@ public class LogOutSystemTests {
         "Logged-in provider should receive success message after logout.");
   }
 
+  // Verifies that logout clears the controller's current user.
   @Test
   void currentUserIsNullAfterLogout() {
     ScriptedView view = new ScriptedView();
@@ -63,8 +67,7 @@ public class LogOutSystemTests {
     assertNull(controller.getCurrentUser(), "Current user should be null after logout.");
   }
 
-  // --- Access control ---
-
+  // Verifies that logout is rejected when no user is currently logged in.
   @Test
   void guestCannotLogOut() {
     ScriptedView view = new ScriptedView();

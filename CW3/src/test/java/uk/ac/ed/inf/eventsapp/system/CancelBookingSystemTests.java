@@ -35,6 +35,8 @@ public class CancelBookingSystemTests {
   @BeforeEach
   @SuppressWarnings("unused")
   void setUp() {
+    // Builds one active booking on a future performance so each cancellation scenario starts from a
+    // valid baseline.
     provider = new EntertainmentProvider("provider@gmail.com", "password", "EooEle", "123",
         "Provider", "This is EooEle");
     student =
@@ -55,6 +57,7 @@ public class CancelBookingSystemTests {
   }
 
 
+  // Verifies that a student can cancel their own active booking.
   @Test
   void studentCanCancelOwnActiveBooking() {
     ScriptedView view = new ScriptedView("1");
@@ -68,8 +71,7 @@ public class CancelBookingSystemTests {
         "Student should receive a success message after cancelling.");
   }
 
-  // --- Access control ---
-
+  // Verifies that authenticated non-students cannot cancel bookings.
   @Test
   void onlyStudentsCanCancelBookings() {
     ScriptedView view = new ScriptedView();
@@ -83,6 +85,7 @@ public class CancelBookingSystemTests {
         "Non-students should be rejected.");
   }
 
+  // Verifies that unauthenticated users cannot cancel bookings.
   @Test
   void guestCannotCancelBooking() {
     ScriptedView view = new ScriptedView();
@@ -95,8 +98,7 @@ public class CancelBookingSystemTests {
         "Guest (no user) should be rejected.");
   }
 
-  // --- Input validation ---
-
+  // Verifies that invalid booking-number input shows an error before a successful retry.
   @Test
   void invalidBookingNumberFormatShowsError() {
     ScriptedView view = new ScriptedView("abc", "1");
@@ -110,8 +112,7 @@ public class CancelBookingSystemTests {
         "Non-numeric booking number should show an error.");
   }
 
-  // --- Business logic errors ---
-
+  // Verifies that an unknown booking number shows an error before a successful retry.
   @Test
   void cancellingNonExistentBookingShowsError() {
     ScriptedView view = new ScriptedView("999", "1");
@@ -125,6 +126,7 @@ public class CancelBookingSystemTests {
         "Non-existent booking number should show an error.");
   }
 
+  // Verifies that a student cannot cancel another student's booking but can retry with their own.
   @Test
   void studentCannotCancelAnotherStudentsBooking() {
     Student otherStudent =
@@ -146,6 +148,7 @@ public class CancelBookingSystemTests {
         "Student should be able to retry with their own booking number.");
   }
 
+  // Verifies that an already cancelled booking cannot be cancelled again.
   @Test
   void studentCannotCancelAlreadyCancelledBooking() {
     Booking cancelledBooking = new Booking(2L, 1, 15.0, LocalDateTime.now(),
@@ -164,6 +167,7 @@ public class CancelBookingSystemTests {
         "Already cancelled booking should not be cancellable.");
   }
 
+  // Verifies that a provider-cancelled booking cannot be cancelled by the student again.
   @Test
   void bookingCancelledByProviderCannotBeCancelledByStudent() {
     Booking providerCancelled = new Booking(3L, 1, 15.0, LocalDateTime.now(),
@@ -182,6 +186,7 @@ public class CancelBookingSystemTests {
         "Provider-cancelled booking should not be cancellable by student.");
   }
 
+  // Verifies that a payment-failed booking cannot be cancelled through the student flow.
   @Test
   void paymentFailedBookingCannotBeCancelled() {
     Booking failedBooking = new Booking(4L, 1, 15.0, LocalDateTime.now(),
@@ -200,6 +205,7 @@ public class CancelBookingSystemTests {
         "Payment-failed booking should not be cancellable.");
   }
 
+  // Verifies that bookings less than 24 hours from the performance cannot be cancelled.
   @Test
   void bookingLessThan24HoursAwayCannotBeCancelled() {
     LocalDateTime soonStart = LocalDateTime.now().plusHours(12);
@@ -225,8 +231,7 @@ public class CancelBookingSystemTests {
         "Booking should remain active when cancellation is blocked.");
   }
 
-  // --- Refund failure ---
-
+  // Verifies that a refund failure leaves the booking active and ends the cancellation flow.
   @Test
   void refundFailurePreventsBookingCancellation() {
     PaymentSystem failingPayment = new PaymentSystem() {
@@ -255,8 +260,7 @@ public class CancelBookingSystemTests {
     assertTrue(activeBooking.isActive(), "Booking should remain active when refund fails.");
   }
 
-  // --- State verification ---
-
+  // Verifies that successful cancellation changes the booking status away from active.
   @Test
   void cancelledBookingStatusIsCancelledByStudent() {
     ScriptedView view = new ScriptedView("1");
@@ -269,6 +273,7 @@ public class CancelBookingSystemTests {
     assertFalse(activeBooking.isActive(), "Booking should no longer be active after cancellation.");
   }
 
+  // Verifies that successful cancellation returns the booked tickets to the performance.
   @Test
   void cancelledBookingReturnsTicketsToPerformance() {
     performance.addNumTicketsSold(activeBooking.getNumTickets());

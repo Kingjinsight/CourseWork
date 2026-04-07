@@ -55,6 +55,7 @@ public class MenuControllerSystemTests {
     bookings = new ArrayList<>();
   }
 
+  // Verifies that menu retry and login both work within the same guest-menu loop.
   @Test
   void guestMenuCanRetryMenuSelectionAndLogInStudent() {
     Student student =
@@ -78,6 +79,7 @@ public class MenuControllerSystemTests {
         "Authenticated user should be synced to the booking controller.");
   }
 
+  // Verifies that the guest menu can terminate the application loop without logging a user in.
   @Test
   void guestMenuCanExitCleanly() {
     ExhaustingScriptedView view = new ExhaustingScriptedView("0");
@@ -89,6 +91,8 @@ public class MenuControllerSystemTests {
         "Exiting from the guest menu should leave the user logged out.");
   }
 
+  // Verifies that guest-menu registration updates shared state instead of only showing a success
+  // message.
   @Test
   void guestMenuCanRegisterEntertainmentProvider() {
     ExhaustingScriptedView view = new ExhaustingScriptedView("2", "provider@example.com",
@@ -110,6 +114,7 @@ public class MenuControllerSystemTests {
         "Successful registration should show a confirmation message.");
   }
 
+  // Verifies that the student menu can route to the logout use case and clear the current user.
   @Test
   void studentMenuCanLogOut() {
     Student student =
@@ -127,6 +132,7 @@ public class MenuControllerSystemTests {
         "Logout from the student menu should show a success message.");
   }
 
+  // Verifies that exiting from the student menu leaves the authenticated user unchanged.
   @Test
   void studentMenuCanExitCleanly() {
     Student student =
@@ -141,6 +147,7 @@ public class MenuControllerSystemTests {
         "Exiting from the student menu should not change the current user.");
   }
 
+  // Verifies that the EP menu delegates event creation to the same underlying controller flow.
   @Test
   void entertainmentProviderMenuCanCreateEvent() {
     EntertainmentProvider provider = new EntertainmentProvider("provider@example.com", "password",
@@ -163,6 +170,7 @@ public class MenuControllerSystemTests {
         "Successful event creation should show a confirmation message.");
   }
 
+  // Verifies that booking through the menu still creates the booking and shows its record.
   @Test
   void studentMenuCanBookPerformance() {
     EntertainmentProvider provider = new EntertainmentProvider("provider@example.com", "password",
@@ -190,6 +198,7 @@ public class MenuControllerSystemTests {
         "Successful booking through the student menu should display a booking record.");
   }
 
+  // Verifies that the student menu can route to the edit-preferences use case.
   @Test
   void studentMenuCanEditPreferences() {
     Student student =
@@ -205,6 +214,7 @@ public class MenuControllerSystemTests {
         "Editing preferences through the student menu should succeed.");
   }
 
+  // Verifies that menu-driven cancellation runs the full cancellation workflow and updates state.
   @Test
   void studentMenuCanCancelBooking() {
     EntertainmentProvider provider = new EntertainmentProvider("provider@example.com", "password",
@@ -235,6 +245,7 @@ public class MenuControllerSystemTests {
         "Cancelling a booking through the student menu should show a success message.");
   }
 
+  // Verifies that the EP menu routes to cancel-performance and updates the performance status.
   @Test
   void entertainmentProviderMenuCanCancelPerformance() {
     EntertainmentProvider provider = new EntertainmentProvider("provider@example.com", "password",

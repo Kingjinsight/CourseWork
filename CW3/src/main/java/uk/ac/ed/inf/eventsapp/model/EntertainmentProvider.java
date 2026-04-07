@@ -5,7 +5,10 @@ import java.util.Collection;
 import java.util.Collections;
 
 /**
- * Entertainment-provider user from the UML diagram.
+ * {@code EntertainmentProvider} user
+ *
+ * <p>
+ * This subtype stores organisation information and the collection of events owned by the provider.
  */
 public class EntertainmentProvider extends User {
   private String orgName;

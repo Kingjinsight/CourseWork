@@ -32,22 +32,13 @@
 \maketitle
 \thispagestyle{empty}
 
-\begin{center}
-  Anonymous submission for the SE component of Coursework 3.
-\end{center}
-
 \vspace{1em}
-
-% Keep this report anonymous:
-% - do not include names
-% - do not include UUNs
-% - do not include the declaration of work here
 
 \section{Task 1: Design Choices and Implementation Notes}
 
 \subsection{Implemented Use Cases}
 
-This submission implements the group-22 main-system use cases:
+This submission implements these use cases:
 \begin{itemize}
   \item Log in
   \item Log out
@@ -63,174 +54,139 @@ This submission implements the group-22 main-system use cases:
 
 \subsection{System Structure}
 
-Briefly describe the main architecture of the system. For example:
-\begin{itemize}
-  \item the main packages and their responsibilities
-  \item the role of controllers, models, view, and external/integration components
-  \item how data is currently stored during execution
-\end{itemize}
+The implementation follows the structure suggested by the coursework diagrams. The
+\texttt{controller} package contains the use-case logic: \texttt{UserController} handles
+authentication, registration, and student preferences; \texttt{EventPerformanceController}
+handles event creation, search, viewing, and performance cancellation; and
+\texttt{BookingController} handles booking and booking cancellation. The
+\texttt{MenuController} provides the top-level text-menu flow and dispatches to the
+three main controllers depending on the current user role.
 
-\noindent
-\textbf{Write here:}
-
-\vspace{6em}
+The \texttt{model} package stores the main domain objects, including \texttt{User} and
+its subtypes, \texttt{Event}, \texttt{Performance}, \texttt{Booking}, and
+\texttt{StudentPreferences}. The \texttt{view} package provides a text-based interface
+through the \texttt{View} abstraction and \texttt{TextUserInterface} implementation.
+The \texttt{integration} package adapts the provided external verification API to the
+names used in the UML. During execution, application data is stored in shared in-memory
+collections for users, events, performances, and bookings, which are passed to the
+controllers from \texttt{Main}.
 
 \subsection{Alignment with the Provided UML}
 
-State whether the implementation matches the provided class and sequence diagrams exactly.
-If there were any points where the diagrams could not be followed directly, explain:
-\begin{itemize}
-  \item what the mismatch was
-  \item why it could not be implemented exactly as drawn
-  \item what design change was made in code
-  \item how the UML could be updated to stay consistent with the implementation
-\end{itemize}
+The implementation was written to stay close to the supplied UML, but a few points
+required small adjustments. First, some APIs shown in the class diagram belong to
+four-person-group use cases such as \texttt{reviewPerformance()} and
+\texttt{sponsorPerformance()}. Because our group size is three, we kept these methods as
+documented placeholders rather than removing them, but left them unimplemented with
+explicit comments explaining why.
 
-\noindent
-\textbf{Write here:}
-
-\vspace{8em}
+Second, some data access in the sequence diagrams is more abstract than a concrete Java
+implementation. For example, refund processing for \texttt{Cancel performance} is shown
+through \texttt{getBookingDetailsForRefund()}, so the controller follows this interface
+and parses refund details from the returned value before calling the payment system.
+However, local state updates still need direct booking objects afterwards. If we were to
+revise the UML, we would clarify which helper methods are intended as public workflow
+APIs and which are only abstract descriptions of internal data flow.
 
 \subsection{Key Design Choices}
 
-Summarise the most important choices you made when implementing the main system. For example:
-\begin{itemize}
-  \item handling of input validation
-  \item object ownership and shared state
-  \item controller responsibilities
-  \item interaction with mock external systems
-  \item error handling strategy in the text interface
-\end{itemize}
+One important design choice was to keep controller responsibilities narrow and explicit.
+Each controller is responsible for a coherent set of use cases, while the model classes
+hold the data and small pieces of domain logic such as ticket availability, booking
+status, or preference matching. Shared parsing and validation logic was moved into
+\texttt{InputParsers} so that the same input rules are reused across multiple use cases.
 
-\noindent
-\textbf{Write here:}
-
-\vspace{8em}
+Another important choice was to maintain shared application collections for events,
+performances, bookings, and users. This made it easier to match the use-case flow in
+the sequence diagrams and to write system tests that exercise multiple use cases in
+sequence. We also separated the text interface behind the \texttt{View} interface so
+that real console interaction and scripted system tests could use the same controller
+logic.
 
 \subsection{Quality Considerations in the Implementation}
 
-Briefly mention implementation choices that support quality attributes such as security,
-privacy, or reliability. This can overlap with the later reflection, but here the focus
-should be on concrete system decisions.
+We focused most on reliability and input robustness. User-entered values are validated
+close to the point of entry, and several use cases follow the wording of the requirements
+by retrying only where the document says they should retry and terminating otherwise.
+This reduces the chance of moving the system into invalid states. We also made payment
+and refund flows explicit, including the booking states \texttt{ACTIVE},
+\texttt{PAYMENTFAILED}, \texttt{CANCELLEDBYSTUDENT}, and
+\texttt{CANCELLEDBYPROVIDER}.
 
-\noindent
-\textbf{Write here:}
+We also addressed security in a limited but concrete way by storing user passwords as
+salted hashes rather than plain text, including for preregistered users loaded from file.
+Finally, maintainability was supported by adding Javadoc, keeping tests aligned with use
+cases, and automating formatting, testing, packaging, report generation, and Javadoc
+generation through Maven, pre-commit, and GitHub Actions.
 
-\vspace{8em}
+\newpage
 
 \section{Task 5: Reflection}
-
-% Each of the following three parts should stay within 250 words.
-% One or two paragraphs per part is enough.
 
 \subsection{Reflection on Teamwork}
 
 \noindent
 
 \textbf{The Experience}
-Our team first established a workflow using Git and GitHub with a fork-and-pull-request model.
-We also built a CI check action for coursework. For Task 1, we began by dividing the use cases across the team before any implementation.
-Once the use cases were divided, we wrote placeholder functions in all controller and model files.
-This approach enabled a unified interface and facilitated assigning specific functions to each team member based on their use cases.
+Our team organised the implementation around GitHub pull requests rather than direct commits to the main branch. We created feature branches, opened pull requests for all changes, and used automated checks before review and merge. We also agreed early on the controller and model interfaces so that different use cases could be implemented in parallel with fewer clashes. This gave us a predictable workflow for coding, reviewing, and integrating work.
 
 \textbf{Reflection on Action}
 By using placeholder functions and assigning ownership from the start, we rarely encountered merge conflicts, as we seldom modified the same files or functions simultaneously.
-This time, our engagement exceeded that of previous coursework.
+This time, our engagement exceeded that of previous coursework, leading to improved output.
 We also implemented code review via pull requests, which was particularly important.
 In a complex MVC system with shared data structures and interdependent controllers, this ensured teammates understood each other's APIs and data structures before integrating changes.
 Our GitHub action CI check verified that CW3 files were modified, that all tests passed, and that the submission ZIP was built, which offers a convenient double-check after work.
 
 \textbf{Theory}
-We learned that defining function signatures early helps parallel development by reducing conflicts and forcing agreement on interfaces.
-We also learned that code review is essential in complex systems, as it helps maintain a shared understanding across the team.
+We learned that strong repository rules can improve teamwork, not just code quality. A pull-request-first workflow gave us both review discipline and a shared understanding of interfaces and integration points.
 
 \textbf{Preparation}
-Next time, we will adopt a Kanban-style task board to make the flow of work more visible and surface dependencies between teammates earlier,
-rather than relying solely on ad-hoc messaging.
+Next time we would keep the same protected-branch workflow, but add a lightweight board for tracking dependencies between use cases so that blocked work is visible earlier and review can be scheduled more evenly.
 
 \subsection{Reflection on the Quality of the Work and Quality Attributes}
 
 \noindent
 \textbf{Word limit: 250 words maximum}
 
-\textbf{Experience.}
-We implemented all ten assigned use cases in a complex MVC system, then supported the
-implementation with unit tests for the performance class and mock external systems, system tests for each use
-case, and integrated tests that chain multiple use cases through shared state. We also
-reviewed an external group's code submission as a structured code review exercise.
-
-\textbf{Reflection on Action.}
-The quality attribute best demonstrated by the final system is \textit{reliability} ---
-the system behaves correctly and gracefully across a wide range of inputs. Every
-controller method checks the current user's role before proceeding, preventing
-unauthorised actions. All user inputs are parsed defensively: invalid types produce an
-error and prompt a retry rather than crashing the system. Ownership is enforced before
-any destructive operation --- only the student who created a booking can cancel it, and
-only the entertainment provider who owns an event can cancel its performances. Payment
-failures are handled gracefully: a booking is created first and marked
-\texttt{PAYMENTFAILED} if the charge does not go through, preserving the booking record.
-The cancellation workflow uses a two-pass approach --- refunds are processed for all
-active bookings before any status is changed, so a failed refund aborts the entire
-cancellation cleanly. These decisions are validated by 183 passing tests across unit,
-system, and integrated levels.
-
-\textbf{Theory.}
-We learned that reliability emerges from many small, consistent guards rather than one
-centralised check. Each null check, type parse, or role verification is simple in
-isolation, but together they prevent the system from entering an inconsistent state.
-
-\textbf{Preparation.}
-With more time, we would address two gaps: passwords are currently stored in plaintext
-in \texttt{docs/registered-eps.txt}, and in-memory data (events, performances, bookings)
-is lost on restart. Password hashing and a persistent data store would be the natural
-next steps.
+\vspace{10em}
 
 \subsection{Reflection on Tools, Agile Approaches and Practices}
 
-\textbf{Suggested structure:}
-\begin{itemize}
-  \item why each tool, practice, or agile approach was chosen
-  \item what advantages and disadvantages were observed
-  \item what worked well in practice and what did not
-  \item what would be changed next time
-\end{itemize}
-
 \noindent
-\textbf{Word limit: 250 words maximum}
+\textbf{The Experience}
+We chose GitHub as the centre of the workflow because it combined version control, pull requests, review, and CI in one place. We used Maven for building, testing, and packaging, pre-commit for formatting hooks, and GitHub Actions for automated checks. We also created a LaTeX build workflow so the report PDF was generated automatically instead of maintained manually.
 
-\vspace{2em}
+\textbf{Reflection on Action}
+This toolchain matched an agile, incremental style of work. Small branches and pull requests allowed us to build use cases one at a time while keeping the system in a releasable state. Automated formatting reduced style arguments, while required checks made test failures visible immediately. The LaTeX workflow was useful because it turned the report into another reproducible build artifact rather than a separate manual task. The strongest practice here was continuous integration combined with branch protection: no direct commits to the protected branch, required checks before merge, squash merge for tidy history, linear history, and blocked force pushes. The downside was overhead. For coursework-scale changes, setting up and maintaining this pipeline took time, and a few CI issues required debugging infrastructure rather than application logic.
+
+\textbf{Theory}
+We learned that these tools were most useful when combined as a system: pre-commit, CI, pull requests, and branch protection each reinforced the others.
+
+\textbf{Preparation}
+Next time we would keep the same workflow, but add clearer dashboard-style tracking of open tasks and review ownership so that process information is as visible as build information.
 
 \subsection{Screenshots of Tools and Practices}
 
-The coursework document explicitly asks for screenshots in the tools/agile/practices reflection.
-Insert screenshots of the tools you actually used, such as issue tracking, Kanban boards,
-version control history, CI runs, or planning boards.
+The screenshots below show the main tools and practices described in the reflection:
+pull-request-based development, automated GitHub Actions checks, and repository rules
+that enforced protected-branch collaboration.
 
 \begin{figure}[h]
   \centering
-  % Replace the filename below with your real screenshot.
-  \fbox{\rule{0pt}{2in}\rule{0.9\linewidth}{0pt}}
-  \caption{Screenshot placeholder 1. Replace with a real screenshot of a tool or practice used by the team.}
+  \includegraphics[width=0.92\linewidth]{img3.png}
+  \caption{A pull request used for review and integration, showing the required checks and squash-and-merge workflow.}
 \end{figure}
 
 \begin{figure}[h]
   \centering
-  % Replace the filename below with your real screenshot.
-  \fbox{\rule{0pt}{2in}\rule{0.9\linewidth}{0pt}}
-  \caption{Screenshot placeholder 2. Replace with another real screenshot if needed.}
+  \includegraphics[width=0.92\linewidth]{img1.png}
+  \caption{GitHub Actions workflow runs for the repository, including testing, formatting, report generation, and packaging automation.}
 \end{figure}
 
-\section{Submission Checklist}
-
-Before exporting the PDF, check the following:
-\begin{itemize}
-  \item The file is named \texttt{CW3SEReportGroup22.pdf}.
-  \item The document is anonymous.
-  \item The declaration of work is not included here.
-  \item Task 1 choices are described.
-  \item All three reflection parts are included.
-  \item Each reflection part is at most 250 words.
-  \item The tools/agile section includes screenshots.
-\end{itemize}
+\begin{figure}[h]
+  \centering
+  \includegraphics[width=0.92\linewidth]{img5.png}
+  \caption{Repository branch protection rules requiring pull requests, passing status checks, linear history, and blocked force pushes.}
+\end{figure}
 
 \end{document}

@@ -30,12 +30,14 @@ public class CreateEventSystemTests {
   @BeforeEach
   @SuppressWarnings("unused")
   void setUp() {
+    // Resets the shared event collections before each create-event scenario.
     events = new ArrayList<>();
     performances = new ArrayList<>();
     provider = new EntertainmentProvider("provider@example.com", "encrypted_password",
         "Festival Org", "BN-1234567", "Provider Rep", "Runs live events");
   }
 
+  // Verifies that a logged-in provider can create a valid ticketed event.
   @Test
   void registeredProviderCanCreateATicketedEvent() {
     ScriptedView view = createView(ticketedInputs());
@@ -51,6 +53,7 @@ public class CreateEventSystemTests {
     assertNotNull(createdEvent.getPerformanceByID(1L));
   }
 
+  // Verifies that a logged-in provider can create a valid non-ticketed event.
   @Test
   void registeredProviderCanCreateANonTicketedEvent() {
     ScriptedView view = createView(nonTicketedInputs());
@@ -64,6 +67,7 @@ public class CreateEventSystemTests {
     assertEquals("SUCCESS: Event created successfully.", view.getLastSuccessMessage());
   }
 
+  // Verifies that one event can be created with multiple performances in a single flow.
   @Test
   void registeredProviderCanCreateAnEventWithMultiplePerformances() {
     ScriptedView view =
@@ -81,6 +85,7 @@ public class CreateEventSystemTests {
     assertEquals("SUCCESS: Event created successfully.", view.getLastSuccessMessage());
   }
 
+  // Verifies that unauthenticated users cannot create events.
   @Test
   void guestCannotCreateAnEvent() {
     ScriptedView view = new ScriptedView();
@@ -95,6 +100,7 @@ public class CreateEventSystemTests {
         view.getLastErrorMessage());
   }
 
+  // Verifies that a missing title blocks event creation.
   @Test
   void emptyEventTitlePreventsEventCreation() {
     String[] inputs = ticketedInputs();
@@ -103,6 +109,7 @@ public class CreateEventSystemTests {
     assertCreationFailsWith("ERROR: Event title is required.", inputs);
   }
 
+  // Verifies that an unsupported event type blocks event creation.
   @Test
   void invalidEventTypePreventsEventCreation() {
     String[] inputs = ticketedInputs();
@@ -111,6 +118,7 @@ public class CreateEventSystemTests {
     assertCreationFailsWith("ERROR: Invalid event type.", inputs);
   }
 
+  // Verifies that an invalid ticketed flag blocks event creation.
   @Test
   void invalidTicketedFlagPreventsEventCreation() {
     String[] inputs = ticketedInputs();
@@ -119,6 +127,7 @@ public class CreateEventSystemTests {
     assertCreationFailsWith("ERROR: Ticketed must be specified as yes or no.", inputs);
   }
 
+  // Verifies that a non-positive performance count blocks event creation.
   @Test
   void invalidPerformanceCountPreventsEventCreation() {
     String[] inputs = ticketedInputs();
@@ -127,6 +136,7 @@ public class CreateEventSystemTests {
     assertCreationFailsWith("ERROR: Number of performances must be a positive integer.", inputs);
   }
 
+  // Verifies that malformed performance times block event creation.
   @Test
   void invalidPerformanceDateTimePreventsEventCreation() {
     String[] inputs = ticketedInputs();
@@ -135,6 +145,7 @@ public class CreateEventSystemTests {
     assertCreationFailsWith("ERROR: Performance dates/times are invalid.", inputs);
   }
 
+  // Verifies that a performance ending before it starts blocks event creation.
   @Test
   void endTimeBeforeStartTimePreventsEventCreation() {
     String[] inputs = ticketedInputs();
@@ -143,6 +154,7 @@ public class CreateEventSystemTests {
     assertCreationFailsWith("ERROR: Performance dates/times are invalid.", inputs);
   }
 
+  // Verifies that missing performer names block event creation.
   @Test
   void emptyPerformerNamesPreventEventCreation() {
     String[] inputs = ticketedInputs();
@@ -151,6 +163,7 @@ public class CreateEventSystemTests {
     assertCreationFailsWith("ERROR: At least one performer name is required.", inputs);
   }
 
+  // Verifies that a missing venue address blocks event creation.
   @Test
   void emptyVenueAddressPreventsEventCreation() {
     String[] inputs = ticketedInputs();
@@ -159,6 +172,7 @@ public class CreateEventSystemTests {
     assertCreationFailsWith("ERROR: Venue address is required.", inputs);
   }
 
+  // Verifies that an invalid venue capacity blocks event creation.
   @Test
   void invalidVenueCapacityPreventsEventCreation() {
     String[] inputs = ticketedInputs();
@@ -167,6 +181,7 @@ public class CreateEventSystemTests {
     assertCreationFailsWith("ERROR: Venue capacity must be a positive integer.", inputs);
   }
 
+  // Verifies that invalid venue flags block event creation.
   @Test
   void invalidVenueFlagsPreventEventCreation() {
     String[] inputs = ticketedInputs();
@@ -175,6 +190,7 @@ public class CreateEventSystemTests {
     assertCreationFailsWith("ERROR: Venue flags must be specified as yes or no.", inputs);
   }
 
+  // Verifies that an invalid ticket count blocks creation of a ticketed event.
   @Test
   void invalidTicketCountPreventsEventCreation() {
     String[] inputs = ticketedInputs();
@@ -185,6 +201,7 @@ public class CreateEventSystemTests {
         inputs);
   }
 
+  // Verifies that an invalid ticket price format blocks creation of a ticketed event.
   @Test
   void invalidTicketPriceFormatPreventsEventCreation() {
     String[] inputs = ticketedInputs();
@@ -195,6 +212,8 @@ public class CreateEventSystemTests {
         inputs);
   }
 
+  // Verifies that an event cannot be created when another event already uses the same title and
+  // schedule.
   @Test
   void duplicateEventTitleAndPerformanceTimeIsRejected() {
     Event existingEvent = new Event(99L, "Spring Concert", EventType.MUSIC, true, provider);
@@ -214,6 +233,7 @@ public class CreateEventSystemTests {
         view.getLastErrorMessage());
   }
 
+  // Verifies that one event cannot contain two performances with the same schedule.
   @Test
   void duplicatePerformanceTimesWithinTheSameEventAreRejected() {
     ScriptedView view =
@@ -243,6 +263,7 @@ public class CreateEventSystemTests {
   }
 
   private void assertCreationFailsWith(String expectedErrorMessage, String... inputs) {
+    // Verifies that invalid create-event input produces the expected error and no persisted state.
     ScriptedView view = createView(inputs);
     EventPerformanceController controller = controllerForProvider(view);
 

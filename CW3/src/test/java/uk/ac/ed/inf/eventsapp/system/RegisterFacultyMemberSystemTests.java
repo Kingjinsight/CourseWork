@@ -20,6 +20,7 @@ public class RegisterFacultyMemberSystemTests {
   @TempDir
   Path tempDir;
 
+  // Verifies that the first successful faculty login lazily creates and returns the account.
   @Test
   void firstLoginAttemptCreatesFacultyAccountAndLogsTheFacultyMemberIn() throws IOException {
     Path facultyFile = createFacultyFile("xxxxrt@ed.ac.uk,encrypted-xxxxrt-password",
@@ -35,6 +36,7 @@ public class RegisterFacultyMemberSystemTests {
         "The first login attempt by a listed faculty member should create exactly one account.");
   }
 
+  // Verifies that repeated faculty logins reuse the same account instead of creating duplicates.
   @Test
   void repeatedSuccessfulLoginAttemptsDoNotCreateDuplicateFacultyAccounts() throws IOException {
     Path facultyFile = createFacultyFile("xxxxrt@ed.ac.uk,encrypted-xxxxrt-password");
@@ -47,6 +49,7 @@ public class RegisterFacultyMemberSystemTests {
         "Repeated login attempts by the same faculty member should not create duplicates.");
   }
 
+  // Verifies that emails missing from the configured faculty file do not produce accounts.
   @Test
   void unknownEmailDoesNotProduceAFacultyAccount() throws IOException {
     Path facultyFile = createFacultyFile("xxxxrt@ed.ac.uk,encrypted-xxxxrt-password");
@@ -58,6 +61,7 @@ public class RegisterFacultyMemberSystemTests {
         "Only email addresses present in the configured faculty file should be registered.");
   }
 
+  // Verifies that malformed rows are ignored so valid faculty entries remain usable.
   @Test
   void invalidRowsDoNotBlockLoginForFacultyMembersOnValidRows() throws IOException {
     Path facultyFile = createFacultyFile("invalid-row-without-comma",

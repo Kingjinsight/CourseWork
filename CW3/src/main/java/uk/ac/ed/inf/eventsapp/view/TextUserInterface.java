@@ -25,18 +25,18 @@ public class TextUserInterface implements View {
     this.lineReader = createLineReader();
   }
 
-  @Override
   /**
    * {@inheritDoc}
    */
+  @Override
   public String getInput(String inputPrompt) {
     return getInput(inputPrompt, ": ");
   }
 
-  @Override
   /**
    * {@inheritDoc}
    */
+  @Override
   public String getInput(String inputPrompt, String promptEnd) {
     String input = lineReader.readLine(inputPrompt + promptEnd);
     if (isExitSequence(input)) {
@@ -45,44 +45,44 @@ public class TextUserInterface implements View {
     return input;
   }
 
-  @Override
   /**
    * {@inheritDoc}
    */
+  @Override
   public void displaySuccess(String successMessage) {
     System.out.println(SUCCESS_PREFIX + successMessage);
   }
 
-  @Override
   /**
    * {@inheritDoc}
    */
+  @Override
   public void displayError(String errorMessage) {
     System.out.println(ERROR_PREFIX + errorMessage);
   }
 
-  @Override
   /**
    * {@inheritDoc}
    */
+  @Override
   public void displayListOfPerformances(Collection<String> listOfPerformanceInfo) {
     for (String performanceInfo : listOfPerformanceInfo) {
       System.out.println(performanceInfo);
     }
   }
 
-  @Override
   /**
    * {@inheritDoc}
    */
+  @Override
   public void displaySpecificPerformance(String performanceInfo) {
     System.out.println(performanceInfo);
   }
 
-  @Override
   /**
    * {@inheritDoc}
    */
+  @Override
   public void displayBookingRecord(String bookingRecord) {
     System.out.println(bookingRecord);
   }

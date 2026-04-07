@@ -30,12 +30,14 @@ public class SearchPerformancesSystemTests {
   @BeforeEach
   @SuppressWarnings("unused")
   void setUp() {
+    // Resets the shared event and performance collections before each search scenario.
     events = new ArrayList<>();
     performances = new ArrayList<>();
     provider = new EntertainmentProvider("provider@example.com", "encrypted_password",
         "Festival Org", "BN-1234567", "Provider Rep", "Runs live events");
   }
 
+  // Verifies that a logged-in user can retrieve all performances scheduled on the requested date.
   @Test
   void loggedInUserCanSeePerformancesOnTheRequestedDate() {
     Event musicEvent = createEventWithPerformance(1L, "Spring Concert", EventType.MUSIC,
@@ -72,6 +74,7 @@ public class SearchPerformancesSystemTests {
     assertTrue(view.getErrorMessages().isEmpty());
   }
 
+  // Verifies that unauthenticated users cannot search for performances.
   @Test
   void guestCannotSearchForPerformances() {
     events.add(createEventWithPerformance(1L, "Spring Concert", EventType.MUSIC,
@@ -88,6 +91,7 @@ public class SearchPerformancesSystemTests {
     assertTrue(view.getLastDisplayedPerformanceList().isEmpty());
   }
 
+  // Verifies that matching student preferences move relevant events ahead of non-matching ones.
   @Test
   void studentPreferencesMoveMatchingEventsToTheFront() {
     Event sportsEvent = createEventWithPerformance(1L, "Varsity Match", EventType.SPORTS,
@@ -113,6 +117,7 @@ public class SearchPerformancesSystemTests {
     assertTrue(displayed.get(1).contains("Venue: Sports Hall"));
   }
 
+  // Verifies that search results keep insertion order when no preferences are selected.
   @Test
   void studentWithNoSelectedPreferencesKeepsInsertionOrder() {
     Event sportsEvent = createEventWithPerformance(1L, "Varsity Match", EventType.SPORTS,
@@ -138,6 +143,7 @@ public class SearchPerformancesSystemTests {
     assertTrue(displayed.get(1).contains("Venue: McEwan Hall"));
   }
 
+  // Verifies that invalid date input shows an error before the user can retry with a valid date.
   @Test
   void invalidDateFormatShowsAnErrorMessageAndRequiresDateAgain() {
     events.add(createEventWithPerformance(1L, "Spring Concert", EventType.MUSIC,
@@ -156,6 +162,7 @@ public class SearchPerformancesSystemTests {
     assertTrue(view.getLastDisplayedPerformanceList().iterator().next().contains("Spring Concert"));
   }
 
+  // Verifies that searching a date without performances shows the expected error.
   @Test
   void searchingADateWithoutPerformancesShowsAnErrorMessage() {
     events.add(createEventWithPerformance(1L, "Spring Concert", EventType.MUSIC,
@@ -173,6 +180,7 @@ public class SearchPerformancesSystemTests {
     assertTrue(view.getLastDisplayedPerformanceList().isEmpty());
   }
 
+  // Verifies that multiple performances from the same event can appear in a single day's results.
   @Test
   void sameEventCanReturnMultiplePerformancesOnTheSameDate() {
     Event event = new Event(1L, "Spring Concert", EventType.MUSIC, true, provider);

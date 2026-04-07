@@ -26,6 +26,7 @@ public class TestRegistrationUtility {
   @TempDir
   Path tempDir;
 
+  // Verifies that a matching faculty email is lazily registered from the configured file.
   @Test
   void registerFacultyMemberReturnsMatchingFacultyFromConfiguredFile() throws IOException {
     Path facultyFile = createFacultyFile("xxxxrt@ed.ac.uk,encrypted-xxxxrt-password",
@@ -38,6 +39,7 @@ public class TestRegistrationUtility {
         "A matching faculty email should be lazily registered from the configured file.");
   }
 
+  // Verifies that unknown faculty emails do not create accounts.
   @Test
   void registerFacultyMemberReturnsNullWhenEmailIsMissingFromConfiguredFile() throws IOException {
     Path facultyFile = createFacultyFile("xxxxrt@ed.ac.uk,encrypted-xxxxrt-password");
@@ -49,6 +51,7 @@ public class TestRegistrationUtility {
         "A login attempt for an email outside the faculty file should not create an account.");
   }
 
+  // Verifies that malformed rows are skipped while valid rows remain usable.
   @Test
   void registerFacultyMemberSkipsInvalidRowsAndStillFindsValidFaculty() throws IOException {
     Path facultyFile = createFacultyFile("invalid-row-without-comma", " ,missing-email", "abc,def",
@@ -61,6 +64,7 @@ public class TestRegistrationUtility {
         "Invalid rows should be skipped so valid faculty entries remain usable.");
   }
 
+  // Verifies that repeated registration attempts reuse the same faculty instance.
   @Test
   void repeatedRegistrationReturnsSameFacultyInstance() throws IOException {
     Path facultyFile = createFacultyFile("xxxxrt@ed.ac.uk,encrypted-xxxxrt-password");
@@ -73,6 +77,7 @@ public class TestRegistrationUtility {
         "Repeated login attempts should reuse the previously created faculty account.");
   }
 
+  // Verifies that listed faculty members can log in using the configured password.
   @Test
   void loginFacultyMemberReturnsFacultyMemberWhenCredentialsMatch() throws IOException {
     Path facultyFile = createFacultyFile("xxxxrt@ed.ac.uk,encrypted-xxxxrt-password");
@@ -85,6 +90,7 @@ public class TestRegistrationUtility {
         "A listed faculty member should be able to log in using the configured password.");
   }
 
+  // Verifies that faculty login fails when the supplied password does not match the stored one.
   @Test
   void loginFacultyMemberReturnsNullWhenPasswordDoesNotMatch() throws IOException {
     Path facultyFile = createFacultyFile("xxxxrt@ed.ac.uk,encrypted-xxxxrt-password");
@@ -96,6 +102,7 @@ public class TestRegistrationUtility {
         "Faculty login should fail when the supplied password does not match.");
   }
 
+  // Verifies that file changes are picked up so later valid faculty rows can be registered.
   @Test
   void registerFacultyMemberReloadsFacultyFileAfterItsContentsChange() throws IOException {
     Path facultyFile = createFacultyFile("xxxxrt@ed.ac.uk,encrypted-xxxxrt-password");
@@ -111,6 +118,8 @@ public class TestRegistrationUtility {
         "The faculty cache should refresh when the configured file contents change.");
   }
 
+  // Verifies that no faculty account is created when the configured file contains only invalid
+  // rows.
   @Test
   void registerFacultyMemberReturnsNullWhenEveryRowIsInvalid() throws IOException {
     Path facultyFile = createFacultyFile("invalid-row-without-comma", "abc,def",
@@ -122,6 +131,7 @@ public class TestRegistrationUtility {
     assertNull(facultyMember, "When every row is invalid, no faculty account should be created.");
   }
 
+  // Verifies that concurrent registration attempts still create only one shared faculty account.
   @Test
   void concurrentRegistrationForSameEmailCreatesOnlyOneAccount() throws Exception {
     Path facultyFile = createFacultyFile("xxxxrt@ed.ac.uk,encrypted-xxxxrt-password");
@@ -142,8 +152,8 @@ public class TestRegistrationUtility {
         }));
       }
 
-      ready.await(); // Wait for all registration attempts to be ready
-      start.countDown(); // Start all registration attempts simultaneously
+      ready.await();
+      start.countDown();
 
       firstFacultyMember = futures.get(0).get();
       for (Future<FacultyMember> future : futures) {

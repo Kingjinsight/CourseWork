@@ -25,6 +25,15 @@ public class BookingController extends Controller {
   private final Collection<Performance> performances;
   private final Collection<Booking> bookings;
 
+  /**
+   * Creates a booking controller backed by the shared application collections.
+   *
+   * @param view the text view used for interaction
+   * @param paymentSystem the external payment-system adapter
+   * @param events the shared event collection
+   * @param performances the shared performance collection
+   * @param bookings the shared booking collection
+   */
   public BookingController(View view, PaymentSystem paymentSystem, Collection<Event> events,
       Collection<Performance> performances, Collection<Booking> bookings) {
     super(view);
@@ -35,7 +44,12 @@ public class BookingController extends Controller {
     this.nextBookingNumber = 1L;
   }
 
-  /** Prompts student to select a performance and ticket count, then processes payment. */
+  /**
+   * Books a ticketed performance for the current student.
+   *
+   * The workflow repeatedly asks for a valid performance ID and, when necessary, a valid ticket
+   * quantity before attempting payment.
+   */
   public void bookPerformance() {
     if (!checkCurrentUserIsStudent()) {
       view.displayError("Only students can book performances.");
@@ -108,6 +122,13 @@ public class BookingController extends Controller {
     }
   }
 
+  /**
+   * Placeholder for the 4-person-group {@code Review performance} use case shown in the UML
+   * diagram.
+   *
+   * @throws UnsupportedOperationException because this use case is out of scope for
+   *         three-person-group submissions
+   */
   @SuppressWarnings("unused")
   public void reviewPerformance() {
     // Review performance is a 4-person-group-only use case and is intentionally left
@@ -116,6 +137,12 @@ public class BookingController extends Controller {
   }
 
 
+  /**
+   * Cancels one of the current student's active bookings.
+   *
+   * Invalid booking selections are retried, while refund failure or the 24-hour cancellation rule
+   * terminate the use case after displaying an error.
+   */
   public void cancelBooking() {
     if (!checkCurrentUserIsStudent()) {
       view.displayError("Only students can cancel bookings.");
@@ -161,10 +188,21 @@ public class BookingController extends Controller {
   }
 
 
+  /**
+   * Adds a booking to the shared application booking collection.
+   *
+   * @param booking the booking to store
+   */
   private void addBooking(Booking booking) {
     bookings.add(booking);
   }
 
+  /**
+   * Finds a performance by its identifier.
+   *
+   * @param performanceID the performance identifier to look up
+   * @return the matching performance, or {@code null} if none exists
+   */
   private Performance getPerformanceByID(long performanceID) {
     for (Performance performance : performances) {
       if (performance.hasID(performanceID)) {
@@ -174,6 +212,13 @@ public class BookingController extends Controller {
     return null;
   }
 
+  /**
+   * Checks whether a requested booking quantity can still be satisfied for a performance.
+   *
+   * @param performance the performance being booked
+   * @param numTickets the requested number of tickets
+   * @return {@code true} if enough tickets remain, otherwise {@code false}
+   */
   private boolean checkIfBookingPossible(Performance performance, int numTickets) {
     if (!performance.checkIfTicketsLeft(numTickets)) {
       view.displayError("Requested performance has no tickets left");
@@ -182,6 +227,16 @@ public class BookingController extends Controller {
     return true;
   }
 
+  /**
+   * Finds bookings whose performances belong to the supplied event identifier.
+   *
+   * <p>
+   * This helper is retained to match the UML API surface even though the current three-person-group
+   * flows do not depend on it directly.
+   *
+   * @param eventID the event identifier to match against
+   * @return the bookings associated with performances belonging to that event
+   */
   @SuppressWarnings("unused")
   private Collection<Booking> findBookingsByEventID(long eventID) {
     Collection<Booking> matchingBookings = new java.util.ArrayList<>();
@@ -194,6 +249,12 @@ public class BookingController extends Controller {
     return matchingBookings;
   }
 
+  /**
+   * Finds a booking by its booking number.
+   *
+   * @param bookingNumber the booking number to look up
+   * @return the matching booking, or {@code null} if none exists
+   */
   private Booking getBookingByNumber(long bookingNumber) {
     for (Booking booking : bookings) {
       if (booking.hasBookingNumber(bookingNumber)) {
@@ -203,6 +264,11 @@ public class BookingController extends Controller {
     return null;
   }
 
+  /**
+   * Returns the next booking number that will be assigned.
+   *
+   * @return the next booking number
+   */
   private long getNextBookingNumber() {
     return nextBookingNumber;
   }

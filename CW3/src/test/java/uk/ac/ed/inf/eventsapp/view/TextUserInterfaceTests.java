@@ -8,6 +8,7 @@ import org.junit.jupiter.api.Test;
  * Unit tests for text-user-interface helper behaviour.
  */
 public class TextUserInterfaceTests {
+  // Verifies that the supported prefixed exit commands are recognised as exit requests.
   @Test
   void commonExitSequencesAreRecognised() {
     assertTrue(TextUserInterface.isExitSequence(":q"),
@@ -18,6 +19,7 @@ public class TextUserInterfaceTests {
         "Exit detection should ignore surrounding whitespace.");
   }
 
+  // Verifies that ordinary user input is not mistaken for an exit request.
   @Test
   void normalInputIsNotTreatedAsExitSequence() {
     assertFalse(TextUserInterface.isExitSequence("1"),

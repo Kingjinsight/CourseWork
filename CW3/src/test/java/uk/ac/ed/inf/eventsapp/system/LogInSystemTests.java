@@ -25,6 +25,8 @@ public class LogInSystemTests {
   @BeforeEach
   @SuppressWarnings("unused")
   void setUp() {
+    // Builds a shared user collection containing one student and one provider for each login
+    // scenario.
     users = new ArrayList<>();
     student =
         new Student("student@ed.ac.uk", "password", "Hagan", 1234567, new StudentPreferences());
@@ -35,6 +37,7 @@ public class LogInSystemTests {
   }
 
 
+  // Verifies that a registered student can log in successfully.
   @Test
   void registeredStudentCanLogIn() {
     ScriptedView view = new ScriptedView("student@ed.ac.uk", "password");
@@ -45,6 +48,7 @@ public class LogInSystemTests {
         "Student should receive success message after login.");
   }
 
+  // Verifies that a registered entertainment provider can log in successfully.
   @Test
   void registeredProviderCanLogIn() {
     ScriptedView view = new ScriptedView("provider@gmail.com", "password");
@@ -55,6 +59,7 @@ public class LogInSystemTests {
         "Provider should receive success message after login.");
   }
 
+  // Verifies that a successful login updates the controller's current user.
   @Test
   void currentUserIsSetAfterLogin() {
     ScriptedView view = new ScriptedView("student@ed.ac.uk", "password");
@@ -65,8 +70,7 @@ public class LogInSystemTests {
         "Current user should be the logged-in student.");
   }
 
-  // --- Access control ---
-
+  // Verifies that login is rejected when another user is already authenticated.
   @Test
   void alreadyLoggedInUserCannotLoginAgain() {
     ScriptedView view = new ScriptedView();
@@ -78,8 +82,7 @@ public class LogInSystemTests {
         "Already logged-in user should see an error.");
   }
 
-  // --- Input validation ---
-
+  // Verifies that an incorrect password triggers the generic login error before a successful retry.
   @Test
   void wrongPasswordShowsError() {
     ScriptedView view =
@@ -91,6 +94,8 @@ public class LogInSystemTests {
         "Wrong password should show an error.");
   }
 
+  // Verifies that an unknown email address triggers the generic login error before a successful
+  // retry.
   @Test
   void nonExistentEmailShowsError() {
     ScriptedView view =
@@ -102,6 +107,7 @@ public class LogInSystemTests {
         "Non-existent email should show an error.");
   }
 
+  // Verifies that email matching remains case-sensitive.
   @Test
   void loginIsCaseSensitiveForEmail() {
     ScriptedView view =
@@ -113,6 +119,7 @@ public class LogInSystemTests {
         "Email matching should be case-sensitive.");
   }
 
+  // Verifies that password matching remains case-sensitive.
   @Test
   void loginIsCaseSensitiveForPassword() {
     ScriptedView view =
@@ -124,6 +131,7 @@ public class LogInSystemTests {
         "Password matching should be case-sensitive.");
   }
 
+  // Verifies that malformed email input still produces the generic login failure message.
   @Test
   void invalidEmailFormatShowsError() {
     ScriptedView view = new ScriptedView("not-an-email", "student@ed.ac.uk", "password");
@@ -134,6 +142,8 @@ public class LogInSystemTests {
         "Invalid email format should show the generic login error.");
   }
 
+  // Verifies that an empty password produces the generic login failure message before a successful
+  // retry.
   @Test
   void emptyPasswordShowsError() {
     ScriptedView view = new ScriptedView("student@ed.ac.uk", "", "student@ed.ac.uk", "password");

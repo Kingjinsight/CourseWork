@@ -1,7 +1,7 @@
 package uk.ac.ed.inf.eventsapp.controller;
 
 /**
- * Guest-visible menu options from the UML diagram.
+ * Guest-visible menu options
  */
 public enum GuestMenuOptions {
   LOGIN, REGISTER_EP

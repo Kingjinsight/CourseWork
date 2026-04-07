@@ -11,6 +11,10 @@ import uk.ac.ed.inf.eventsapp.model.EventType;
 
 /**
  * Shared parsing helpers for user-entered text values.
+ *
+ * <p>
+ * These helpers centralise the text-to-value conversions used by the controllers so that input
+ * validation rules stay consistent across use cases.
  */
 public final class InputParsers {
   private static final Pattern EMAIL_PATTERN = Pattern.compile("^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$");

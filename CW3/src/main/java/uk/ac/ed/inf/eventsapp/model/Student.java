@@ -5,7 +5,11 @@ import java.util.Collection;
 import java.util.Collections;
 
 /**
- * Student user from the UML diagram.
+ * {@code Student} user
+ *
+ * <p>
+ * This subtype stores contact details, bookings, and saved preferences used by the search, booking,
+ * and cancellation use cases.
  */
 public class Student extends User {
   private String name;
@@ -13,6 +17,12 @@ public class Student extends User {
   private final Collection<Booking> bookings;
   private final StudentPreferences preferences;
 
+  /**
+   * Creates an empty student placeholder instance.
+   *
+   * <p>
+   * This constructor is kept for tests that populate state gradually.
+   */
   public Student() {
     this.preferences = new StudentPreferences();
     this.bookings = new ArrayList<>();

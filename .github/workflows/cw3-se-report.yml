@@ -3,7 +3,11 @@ name: CW3 SE Report PDF
 on:
   pull_request:
     paths:
-      - "CW3/report/**"
+      - "CW3/report/*.tex"
+      - "CW3/report/*.bib"
+      - "CW3/report/*.png"
+      - "CW3/report/*.jpg"
+      - "CW3/report/*.jpeg"
       - ".github/workflows/cw3-se-report.yml"
   workflow_dispatch:
 

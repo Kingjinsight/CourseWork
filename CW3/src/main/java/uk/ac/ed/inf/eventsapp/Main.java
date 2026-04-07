@@ -20,9 +20,14 @@ import uk.ac.ed.inf.eventsapp.view.TextUserInterface;
 import uk.ac.ed.inf.eventsapp.view.View;
 
 /**
- * Application entry point
+ * Application entry point for the text-based events system.
  */
 public class Main {
+  /**
+   * Creates the shared controllers and launches the main menu loop.
+   *
+   * @param args command-line arguments, which are ignored by this application
+   */
   public static void main(String[] args) {
     View view = new TextUserInterface();
     Collection<User> users = new ArrayList<>();

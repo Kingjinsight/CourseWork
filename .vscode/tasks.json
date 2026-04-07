@@ -83,7 +83,7 @@
       "command": "mvn",
       "args": [
         "-q",
-        "-Pse-implementation-zip",
+        "-Pse-implementation-javadocs,se-implementation-zip",
         "package"
       ],
       "options": {
@@ -110,7 +110,7 @@
       "command": "mvn",
       "args": [
         "-q",
-        "-Ptask4-code-review-zip",
+        "-Ptask4-code-review-javadocs,task4-code-review-zip",
         "package"
       ],
       "options": {
@@ -138,7 +138,7 @@
       "args": [
         "-q",
         "clean",
-        "-Pse-implementation-zip",
+        "-Pse-implementation-javadocs,se-implementation-zip",
         "package"
       ],
       "options": {
@@ -166,7 +166,7 @@
       "args": [
         "-q",
         "clean",
-        "-Ptask4-code-review-zip",
+        "-Ptask4-code-review-javadocs,task4-code-review-zip",
         "package"
       ],
       "options": {

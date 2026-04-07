@@ -1,7 +1,10 @@
 package uk.ac.ed.inf.eventsapp.model;
 
 /**
- * Performance status values from the UML diagram.
+ * {@code PerformanceStatus} values
+ *
+ * <p>
+ * A performance remains available while active and becomes unavailable once cancelled.
  */
 public enum PerformanceStatus {
   ACTIVE, CANCELLED

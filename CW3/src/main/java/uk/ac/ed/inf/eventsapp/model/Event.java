@@ -5,7 +5,11 @@ import java.util.ArrayList;
 import java.util.Collection;
 
 /**
- * Event aggregate from the UML diagram.
+ * Event aggregate
+ *
+ * <p>
+ * An event owns one or more {@link Performance} instances and stores shared event-level data such
+ * as title, type, ticketing mode, and organiser.
  */
 public class Event {
   private long eventID;
@@ -180,11 +184,21 @@ public class Event {
     performances.add(performance);
   }
 
+  /**
+   * Returns the event title for concise user-facing display.
+   *
+   * @return the event title
+   */
   @Override
   public String toString() {
     return title;
   }
 
+  /**
+   * Returns the raw title value used internally by related model objects.
+   *
+   * @return the event title
+   */
   String titleValue() {
     return title;
   }
@@ -230,12 +244,20 @@ public class Event {
     };
   }
 
-  /** @return whether the event is ticketed */
+  /**
+   * Indicates whether this event requires tickets.
+   *
+   * @return {@code true} if the event is ticketed, otherwise {@code false}
+   */
   public boolean isTicketed() {
     return isTicketed;
   }
 
-  /** @return the event identifier */
+  /**
+   * Returns the unique event identifier.
+   *
+   * @return the event identifier
+   */
   public long getEventID() {
     return eventID;
   }
@@ -257,6 +279,11 @@ public class Event {
     return eligiblePerformances;
   }
 
+  /**
+   * Returns the organiser display name chosen for UI output.
+   *
+   * @return the organiser display name, or {@code null} if no organiser is attached
+   */
   String organiserDisplayName() {
     return getOrganiserName();
   }

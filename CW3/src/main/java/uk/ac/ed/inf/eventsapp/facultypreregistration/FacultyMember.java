@@ -15,7 +15,7 @@ public class FacultyMember extends User {
    * Creates a faculty member with the supplied state.
    *
    * @param email faculty email address
-   * @param password faculty password
+   * @param password faculty password or stored password hash
    * @param loginAttempts recorded login attempts
    */
   public FacultyMember(String email, String password, int loginAttempts) {
@@ -23,12 +23,16 @@ public class FacultyMember extends User {
     this.loginAttempts = loginAttempts;
   }
 
-  /** @return the number of recorded login attempts */
+  /**
+   * Returns the number of recorded login attempts for this faculty member.
+   *
+   * @return the number of recorded login attempts
+   */
   public synchronized int getLoginAttempts() {
     return loginAttempts;
   }
 
-  /** Records one login attempt. */
+  /** Records one additional login attempt for this faculty member. */
   public synchronized void recordLoginAttempt() {
     loginAttempts++;
   }

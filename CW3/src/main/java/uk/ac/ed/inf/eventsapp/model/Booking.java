@@ -3,7 +3,11 @@ package uk.ac.ed.inf.eventsapp.model;
 import java.time.LocalDateTime;
 
 /**
- * Booking entity from the UML diagram.
+ * Booking entity
+ *
+ * <p>
+ * A booking records the relationship between a {@link Student} and a specific {@link Performance},
+ * together with ticket count, payment amount, creation time, and booking status.
  */
 public class Booking {
   private long bookingNumber;
@@ -14,7 +18,12 @@ public class Booking {
   private Student student;
   private Performance performance;
 
-  /** Creates an empty booking placeholder instance. */
+  /**
+   * Creates an empty booking placeholder instance.
+   *
+   * <p>
+   * This is kept to support tests that build objects incrementally.
+   */
   public Booking() {};
 
   /**
@@ -40,17 +49,34 @@ public class Booking {
     this.performance = performance;
   }
 
-  /** Marks the booking as cancelled by the student. */
+  /**
+   * Marks the booking as cancelled by the student.
+   *
+   * <p>
+   * This state transition is used after a successful student-initiated refund.
+   */
   public void cancelByStudent() {
     status = BookingStatus.CANCELLEDBYSTUDENT;
   }
 
-  /** Marks the booking as failed because payment did not complete. */
+  /**
+   * Marks the booking as failed because payment did not complete.
+   *
+   * <p>
+   * This status is used when the booking object has been created locally but the external payment
+   * step does not succeed.
+   */
   public void cancelPaymentFailed() {
     status = BookingStatus.PAYMENTFAILED;
   }
 
-  /** Marks the booking as cancelled by the provider due to performance cancellation. */
+  /**
+   * Marks the booking as cancelled by the provider due to performance cancellation.
+   *
+   * <p>
+   * This state transition is used after all required refunds succeed during performance
+   * cancellation.
+   */
   public void cancelByProvider() {
     status = BookingStatus.CANCELLEDBYPROVIDER;
   }
@@ -81,6 +107,10 @@ public class Booking {
   /**
    * Produces a user-facing booking record.
    *
+   * <p>
+   * The record is displayed after a successful booking and includes the student, event,
+   * performance, ticket-count, and payment details.
+   *
    * @return the formatted booking record text
    */
   public String generateBookingRecord() {
@@ -102,6 +132,9 @@ public class Booking {
   /**
    * Checks whether the performance starts more than 24 hours from now.
    *
+   * <p>
+   * This helper implements the cancellation rule used by the {@code Cancel booking} use case.
+   *
    * @return {@code true} if cancellation is still allowed, otherwise {@code false}
    */
   public boolean checkMoreThan24HoursAway() {
@@ -109,22 +142,38 @@ public class Booking {
         && performance.getStartDateTime().isAfter(LocalDateTime.now().plusHours(24));
   }
 
-  /** @return the number of tickets in the booking */
+  /**
+   * Returns the number of tickets recorded on this booking.
+   *
+   * @return the booked ticket count
+   */
   public int getNumTickets() {
     return numTickets;
   }
 
-  /** @return the total amount paid for the booking */
+  /**
+   * Returns the amount paid for this booking.
+   *
+   * @return the total payment amount in GBP
+   */
   public double getAmountPaid() {
     return amountPaid;
   }
 
-  /** @return the student's email address */
+  /**
+   * Returns the booked student's email address.
+   *
+   * @return the student email, or {@code null} if no student is attached
+   */
   public String getStudentEmail() {
     return student == null ? null : student.getEmail();
   }
 
-  /** @return the student's phone number */
+  /**
+   * Returns the booked student's phone number.
+   *
+   * @return the student phone number, or {@code 0} if no student is attached
+   */
   public int getStudentPhone() {
     return student == null ? 0 : student.getPhoneNumber();
   }
@@ -139,21 +188,39 @@ public class Booking {
     return bookingNumber == candidateBookingNumber;
   }
 
-  /** @return the title of the booked performance's event */
+  /**
+   * Returns the title of the event associated with the booked performance.
+   *
+   * @return the event title, or {@code null} if no performance is attached
+   */
   public String getPerformanceEventTitle() {
     return performance == null ? null : performance.getEventTitle();
   }
 
-  /** @return the organiser email of the booked performance's event */
+  /**
+   * Returns the organiser email for the event associated with the booked performance.
+   *
+   * @return the organiser email, or {@code null} if no performance is attached
+   */
   public String getPerformanceOrganiserEmail() {
     return performance == null ? null : performance.getOrganiserEmail();
   }
 
-  /** @return the booked performance */
+  /**
+   * Returns the booked performance.
+   *
+   * @return the booked performance, or {@code null} if no performance is attached
+   */
   public Performance getPerformance() {
     return performance;
   }
 
+  /**
+   * Serialises this booking into a compact refund-data record for the performance-cancellation
+   * workflow.
+   *
+   * @return refund data in {@code numTickets;amountPaid;studentDetails} format
+   */
   String toRefundDetailsString() {
     return numTickets + ";" + amountPaid + ";" + getStudentDetails();
   }

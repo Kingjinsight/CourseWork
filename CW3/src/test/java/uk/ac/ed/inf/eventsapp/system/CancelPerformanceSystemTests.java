@@ -35,6 +35,8 @@ public class CancelPerformanceSystemTests {
   @BeforeEach
   @SuppressWarnings("unused")
   void setUp() {
+    // Builds one future performance so each cancellation scenario starts from a valid
+    // provider-owned baseline.
     provider = new EntertainmentProvider("provider@gmail.com", "password", "EooEle", "123",
         "Provider", "This is EooEle");
     student =
@@ -49,6 +51,7 @@ public class CancelPerformanceSystemTests {
     performances.add(futurePerformance);
   }
 
+  // Verifies that a provider can cancel a future performance that has no bookings.
   @Test
   void providerCanCancelFuturePerformanceWithNoBookings() {
     ScriptedView view = new ScriptedView("1");
@@ -62,6 +65,8 @@ public class CancelPerformanceSystemTests {
         "Provider should receive a success message after cancelling.");
   }
 
+  // Verifies that cancelling a performance with active bookings succeeds after refunds are
+  // processed.
   @Test
   void cancellingPerformanceRefundsActiveBookings() {
     Booking activeBooking = new Booking(1L, 2, 30.0, LocalDateTime.now(), BookingStatus.ACTIVE,
@@ -79,6 +84,7 @@ public class CancelPerformanceSystemTests {
         "Cancellation with active bookings should succeed after refunds.");
   }
 
+  // Verifies that an empty cancellation message is rejected before a successful retry.
   @Test
   void emptyCancellationMessageIsRejectedAndRetried() {
     Booking activeBooking = new Booking(1L, 2, 30.0, LocalDateTime.now(), BookingStatus.ACTIVE,
@@ -98,6 +104,7 @@ public class CancelPerformanceSystemTests {
         "Valid retry should allow performance cancellation to succeed.");
   }
 
+  // Verifies that only active bookings participate in the refund path during cancellation.
   @Test
   void cancelPerformanceWithMixedBookingsRefundsOnlyActive() {
     Booking activeBooking = new Booking(1L, 2, 30.0, LocalDateTime.now(), BookingStatus.ACTIVE,
@@ -118,8 +125,7 @@ public class CancelPerformanceSystemTests {
         "Cancellation should succeed even with a mix of active and cancelled bookings.");
   }
 
-  // --- Access control ---
-
+  // Verifies that authenticated non-providers cannot cancel performances.
   @Test
   void onlyProvidersCanCancelPerformances() {
     ScriptedView view = new ScriptedView();
@@ -133,6 +139,7 @@ public class CancelPerformanceSystemTests {
         view.getLastErrorMessage(), "Non-providers should be rejected.");
   }
 
+  // Verifies that unauthenticated users cannot cancel performances.
   @Test
   void guestCannotCancelPerformance() {
     ScriptedView view = new ScriptedView();
@@ -145,8 +152,7 @@ public class CancelPerformanceSystemTests {
         view.getLastErrorMessage(), "Guest (no user) should be rejected.");
   }
 
-  // --- Input validation ---
-
+  // Verifies that invalid performance-ID input shows an error before a successful retry.
   @Test
   void invalidPerformanceIdFormatShowsError() {
     ScriptedView view = new ScriptedView("abc", "1");
@@ -161,8 +167,7 @@ public class CancelPerformanceSystemTests {
         "Non-numeric performance ID should show an error.");
   }
 
-  // --- Business logic errors ---
-
+  // Verifies that an unknown performance ID shows an error before a successful retry.
   @Test
   void cancellingNonExistentPerformanceShowsError() {
     ScriptedView view = new ScriptedView("999", "1");
@@ -176,6 +181,7 @@ public class CancelPerformanceSystemTests {
         "Non-existent performance ID should show an error.");
   }
 
+  // Verifies that providers cannot cancel performances owned by a different provider.
   @Test
   void providerCannotCancelAnotherProvidersPerformance() {
     EntertainmentProvider otherProvider =
@@ -197,6 +203,7 @@ public class CancelPerformanceSystemTests {
         "Provider should not be able to cancel another provider's performance.");
   }
 
+  // Verifies that past performances cannot be cancelled.
   @Test
   void providerCannotCancelPastPerformance() {
     LocalDateTime past = LocalDateTime.now().minusDays(1);
@@ -215,6 +222,7 @@ public class CancelPerformanceSystemTests {
         "Provider should not be able to cancel a past performance.");
   }
 
+  // Verifies that negative performance IDs are rejected.
   @Test
   void negativePerformanceIdShowsError() {
     ScriptedView view = new ScriptedView("-1", "1");
@@ -229,6 +237,7 @@ public class CancelPerformanceSystemTests {
         "Negative performance ID should show an error.");
   }
 
+  // Verifies that refund failure blocks cancellation and suppresses the success message.
   @Test
   void refundFailurePreventsPerformanceCancellation() {
     Booking activeBooking = new Booking(1L, 2, 30.0, LocalDateTime.now(), BookingStatus.ACTIVE,
@@ -261,6 +270,7 @@ public class CancelPerformanceSystemTests {
         "No success message should be shown when refund fails.");
   }
 
+  // Verifies that cancellation fails when refund details cannot be derived from active bookings.
   @Test
   void missingBookingDetailsForRefundShowsError() {
     Performance performanceWithMissingRefundDetails = new Performance(4L,
@@ -296,6 +306,7 @@ public class CancelPerformanceSystemTests {
         "Missing refund details should block performance cancellation.");
   }
 
+  // Verifies that malformed refund details block performance cancellation.
   @Test
   void inconsistentBookingDetailsForRefundShowError() {
     Performance performanceWithBadRefundDetails = new Performance(5L,
@@ -331,6 +342,7 @@ public class CancelPerformanceSystemTests {
         "Malformed refund details should block performance cancellation.");
   }
 
+  // Verifies that zero is rejected as an invalid performance ID.
   @Test
   void performanceIdZeroShowsError() {
     ScriptedView view = new ScriptedView("0", "1");
@@ -345,8 +357,7 @@ public class CancelPerformanceSystemTests {
         "Performance ID 0 should show an error.");
   }
 
-  // --- State verification ---
-
+  // Verifies that a successfully cancelled performance becomes inactive.
   @Test
   void cancelledPerformanceIsNoLongerActive() {
     ScriptedView view = new ScriptedView("1");
@@ -360,6 +371,7 @@ public class CancelPerformanceSystemTests {
         "Performance should not be active after cancellation.");
   }
 
+  // Verifies that all active bookings become inactive after provider cancellation succeeds.
   @Test
   void allActiveBookingsAreCancelledByProviderAfterCancellation() {
     Student student2 =

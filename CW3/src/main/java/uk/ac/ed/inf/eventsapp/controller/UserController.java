@@ -32,11 +32,30 @@ public class UserController extends Controller {
   private final Collection<User> users;
   private final Collection<Event> events;
 
+  /**
+   * Creates a user controller and loads preregistered student/admin accounts from the configured
+   * CSV files.
+   *
+   * @param view the text view used for interaction
+   * @param verificationSystem the external verification-system adapter
+   * @param users the shared user collection
+   * @param events the shared event collection
+   */
   public UserController(View view, VerificationSystem verificationSystem, Collection<User> users,
       Collection<Event> events) {
     this(view, verificationSystem, users, events, true);
   }
 
+  /**
+   * Creates a user controller.
+   *
+   * @param view the text view used for interaction
+   * @param verificationSystem the external verification-system adapter
+   * @param users the shared user collection
+   * @param events the shared event collection
+   * @param loadPreregisteredUsersFromFiles whether preregistered student/admin CSV files should be
+   *        loaded during construction
+   */
   public UserController(View view, VerificationSystem verificationSystem, Collection<User> users,
       Collection<Event> events, boolean loadPreregisteredUsersFromFiles) {
     super(view);
@@ -50,6 +69,9 @@ public class UserController extends Controller {
 
   /**
    * Logs in a student, admin staff member, or entertainment provider.
+   *
+   * Re-prompts for credentials until a valid login is provided, unless the session is already
+   * authenticated.
    */
   public void login() {
     if (!checkCurrentUserIsGuest()) {
@@ -98,6 +120,9 @@ public class UserController extends Controller {
 
   /**
    * Registers a new entertainment provider after validating their details and business number.
+   *
+   * Missing or malformed fields restart the registration flow, while duplicate-account and failed
+   * verification cases terminate the use case after displaying an error.
    */
   public void registerEntertainmentProvider() {
     if (!checkCurrentUserIsGuest()) {
@@ -135,7 +160,7 @@ public class UserController extends Controller {
         continue;
       }
 
-      if (EPAccountAlreadyExists(orgName, businessNumber)) {
+      if (EPAccountAlreadyExists(email, orgName, businessNumber)) {
         view.displayError("An account already exists for that entertainment provider.");
         return; // exit
       }
@@ -165,6 +190,12 @@ public class UserController extends Controller {
     }
   }
 
+  /**
+   * Updates the current student's preferences.
+   *
+   * The method accepts up to three comma-separated event types and keeps prompting until valid
+   * input is provided.
+   */
   public void editPreferences() {
     if (!checkCurrentUserIsStudent()) {
       view.displayError("Only students can edit preferences.");
@@ -185,11 +216,25 @@ public class UserController extends Controller {
     view.displaySuccess("Preferences updated successfully.");
   }
 
-  private boolean EPAccountAlreadyExists(String orgName, String businessNumber) {
+  /**
+   * Checks whether an entertainment-provider account already exists for the supplied organisation
+   * details.
+   *
+   * @param email the email address to compare against
+   * @param orgName the organisation name to compare against
+   * @param businessNumber the business-registration number to compare against
+   * @return {@code true} if a matching provider account already exists
+   */
+  private boolean EPAccountAlreadyExists(String email, String orgName, String businessNumber) {
     for (User user : users) {
       if (!(user instanceof EntertainmentProvider provider)) {
         continue;
       }
+
+      if (provider.getEmail().equals(email)) {
+        return true;
+      } // Actually we don't need to check this since it has already been checked in
+        // emailAlreadyExists()
 
       if (providerRepresentsSameOrganisation(provider, orgName, businessNumber)) {
         return true;
@@ -199,6 +244,12 @@ public class UserController extends Controller {
     return false;
   }
 
+  /**
+   * Checks whether an email address is already used by an existing user.
+   *
+   * @param email the email address to check
+   * @return {@code true} if an existing user already has that email address
+   */
   private boolean emailAlreadyExists(String email) {
     for (User user : users) {
       if (user.getEmail().equals(email)) {
@@ -208,6 +259,13 @@ public class UserController extends Controller {
     return false;
   }
 
+  /**
+   * Finds a user whose credentials match the supplied login attempt.
+   *
+   * @param email the candidate email address
+   * @param password the candidate password
+   * @return the matching user, or {@code null} if the credentials do not match
+   */
   private User findUserByCredentials(String email, String password) {
     for (User user : users) {
       if (user.getEmail().equals(email) && user.passwordMatches(password)) {
@@ -217,17 +275,29 @@ public class UserController extends Controller {
     return null;
   }
 
+  /**
+   * Adds a user to the shared application user collection if their email address is not already
+   * present.
+   *
+   * @param user the user to add
+   */
   private void addUser(User user) {
     if (!emailAlreadyExists(user.getEmail())) {
       users.add(user);
     }
   }
 
+  /**
+   * Loads preregistered students and admin-staff accounts from the configured CSV files.
+   */
   private void addPreregisteredUsers() {
     loadStudentsFromFile();
     loadAdminsFromFile();
   }
 
+  /**
+   * Loads preregistered students from the configured student CSV file.
+   */
   private void loadStudentsFromFile() {
     Path studentsPath =
         firstExistingPath(PREREGISTERED_USERS_FILE_PATH, "CW3/" + PREREGISTERED_USERS_FILE_PATH);
@@ -243,6 +313,9 @@ public class UserController extends Controller {
     }
   }
 
+  /**
+   * Loads preregistered admin-staff members from the configured admin CSV file.
+   */
   private void loadAdminsFromFile() {
     Path adminPath =
         firstExistingPath(PREREGISTERED_ADMIN_FILE_PATH, "CW3/" + PREREGISTERED_ADMIN_FILE_PATH);
@@ -258,6 +331,12 @@ public class UserController extends Controller {
     }
   }
 
+  /**
+   * Reads comma-delimited records from a preregistration file.
+   *
+   * @param path the file to read
+   * @return the parsed CSV rows
+   */
   private List<String[]> readDelimitedRecords(Path path) {
     try {
       return Files.readAllLines(path, StandardCharsets.UTF_8).stream().map(String::trim)
@@ -269,6 +348,12 @@ public class UserController extends Controller {
     }
   }
 
+  /**
+   * Returns the first candidate path that exists on disk.
+   *
+   * @param candidates ordered candidate file paths
+   * @return the first existing path, or {@code null} if none exist
+   */
   private Path firstExistingPath(String... candidates) {
     for (String candidate : candidates) {
       Path path = Path.of(candidate);
@@ -279,6 +364,12 @@ public class UserController extends Controller {
     return null;
   }
 
+  /**
+   * Creates a {@link Student} from one row of preregistration data.
+   *
+   * @param fields the parsed CSV fields
+   * @return the created student, or {@code null} if the row is invalid
+   */
   private Student createStudent(String[] fields) {
     if (fields.length < 4) {
       return null;
@@ -302,6 +393,12 @@ public class UserController extends Controller {
         preferences);
   }
 
+  /**
+   * Creates an {@link AdminStaff} user from one row of preregistration data.
+   *
+   * @param fields the parsed CSV fields
+   * @return the created admin user, or {@code null} if the row is invalid
+   */
   private AdminStaff createAdmin(String[] fields) {
     if (fields.length < 3) {
       return null;
@@ -314,6 +411,15 @@ public class UserController extends Controller {
     return new AdminStaff(fields[0].trim(), fields[1].trim(), fields[2].trim());
   }
 
+  /**
+   * Checks whether a stored entertainment provider represents the same organisation details as a
+   * registration attempt.
+   *
+   * @param provider the existing provider account
+   * @param orgName the candidate organisation name
+   * @param businessNumber the candidate business-registration number
+   * @return {@code true} if the organisation details should be treated as the same provider
+   */
   private boolean providerRepresentsSameOrganisation(EntertainmentProvider provider, String orgName,
       String businessNumber) {
     return provider.getBusinessNumber().equals(businessNumber)
@@ -321,6 +427,17 @@ public class UserController extends Controller {
             && provider.getBusinessNumber().equals(businessNumber));
   }
 
+  /**
+   * Finds the entertainment provider that owns a given event.
+   *
+   * <p>
+   * This helper is retained to match the UML API surface even though the current three-person-group
+   * flows do not call it directly.
+   *
+   * @param eventNumber the event identifier to resolve
+   * @return the owning entertainment provider, or {@code null} if none can be found
+   */
+  @SuppressWarnings("unused")
   private EntertainmentProvider getEntertainmentProviderOwningEvent(long eventNumber) {
     for (Event event : events) {
       if (event.getEventID() != eventNumber) {

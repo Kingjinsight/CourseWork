@@ -22,7 +22,7 @@ public class RegisterEntertainmentProviderSystemTests {
   private static final String VALID_EMAIL = "provider@gmail.com";
   private static final String VALID_PASSWORD = "password";
   private static final String VALID_ORG = "New Events Ltd";
-  private static final String VALID_BIZ_NUM = "1234567890"; // exactly 10 chars
+  private static final String VALID_BIZ_NUM = "1234567890";
   private static final String VALID_NAME = "Hagan";
   private static final String VALID_DESC = "Live events company";
 
@@ -31,10 +31,12 @@ public class RegisterEntertainmentProviderSystemTests {
   @BeforeEach
   @SuppressWarnings("unused")
   void setUp() {
+    // Resets the shared user collection so each registration scenario starts from a clean state.
     users = new ArrayList<>();
   }
 
 
+  // Verifies that valid registration details create a new entertainment provider.
   @Test
   void providerCanBeRegisteredWithValidBusinessNumber() {
     ScriptedView view = new ScriptedView(VALID_EMAIL, VALID_PASSWORD, VALID_ORG, VALID_BIZ_NUM,
@@ -46,6 +48,7 @@ public class RegisterEntertainmentProviderSystemTests {
         "Provider should receive success message after valid registration.");
   }
 
+  // Verifies that successful registration persists the provider in the shared user collection.
   @Test
   void registeredProviderIsAddedToUsers() {
     ScriptedView view = new ScriptedView(VALID_EMAIL, VALID_PASSWORD, VALID_ORG, VALID_BIZ_NUM,
@@ -57,6 +60,7 @@ public class RegisterEntertainmentProviderSystemTests {
         "Newly registered provider should be in the users collection.");
   }
 
+  // Verifies that a newly registered provider can immediately use the login flow.
   @Test
   void registeredProviderCanLogInAfterRegistration() {
     ScriptedView regView = new ScriptedView(VALID_EMAIL, VALID_PASSWORD, VALID_ORG, VALID_BIZ_NUM,
@@ -73,8 +77,7 @@ public class RegisterEntertainmentProviderSystemTests {
         "Newly registered provider should be able to log in.");
   }
 
-  // --- Access control ---
-
+  // Verifies that registration is blocked when another user is already logged in.
   @Test
   void loggedInUserCannotRegisterProvider() {
     Student student =
@@ -88,8 +91,7 @@ public class RegisterEntertainmentProviderSystemTests {
         "A logged-in user should not be able to register.");
   }
 
-  // --- Verification failure ---
-
+  // Verifies that an undersized business number fails external verification.
   @Test
   void shortBusinessNumberFailsVerification() {
     ScriptedView view =
@@ -102,6 +104,7 @@ public class RegisterEntertainmentProviderSystemTests {
         "Business number shorter than 10 characters should fail verification.");
   }
 
+  // Verifies that an oversized business number fails external verification.
   @Test
   void longBusinessNumberFailsVerification() {
     ScriptedView view = new ScriptedView(VALID_EMAIL, VALID_PASSWORD, VALID_ORG, "12345678901",
@@ -114,8 +117,7 @@ public class RegisterEntertainmentProviderSystemTests {
         "Business number longer than 10 characters should fail verification.");
   }
 
-  // --- Duplicate account detection ---
-
+  // Verifies that duplicate email addresses are rejected before provider creation.
   @Test
   void duplicateEmailShowsError() {
     users.add(new EntertainmentProvider(VALID_EMAIL, "oldpass", "Old Org", "0987654321", "Old Name",
@@ -129,6 +131,7 @@ public class RegisterEntertainmentProviderSystemTests {
         view.getLastErrorMessage(), "Duplicate email should be rejected.");
   }
 
+  // Verifies that an existing organisation and business-number combination is rejected.
   @Test
   void duplicateOrgNameShowsError() {
     users.add(new EntertainmentProvider("other@example.com", "oldpass", VALID_ORG, VALID_BIZ_NUM,
@@ -142,6 +145,7 @@ public class RegisterEntertainmentProviderSystemTests {
         view.getLastErrorMessage(), "Duplicate organisation name should be rejected.");
   }
 
+  // Verifies that reusing an existing business number is rejected.
   @Test
   void duplicateBusinessNumberShowsError() {
     users.add(new EntertainmentProvider("other@example.com", "oldpass", "Other Org", VALID_BIZ_NUM,
@@ -155,6 +159,7 @@ public class RegisterEntertainmentProviderSystemTests {
         view.getLastErrorMessage(), "Duplicate business registration number should be rejected.");
   }
 
+  // Verifies that an invalid email triggers a restart of the registration flow before success.
   @Test
   void invalidEmailShowsErrorAndRequiresEmailAgain() {
     ScriptedView view = new ScriptedView("not-an-email", VALID_EMAIL, VALID_PASSWORD, VALID_ORG,
@@ -170,6 +175,7 @@ public class RegisterEntertainmentProviderSystemTests {
         "Registration should continue after re-entering a valid email.");
   }
 
+  // Verifies that an empty password restarts the registration flow before success.
   @Test
   void emptyPasswordShowsErrorAndRequiresRegistrationDetailsAgain() {
     ScriptedView view = new ScriptedView(VALID_EMAIL, "", VALID_EMAIL, VALID_PASSWORD, VALID_ORG,
@@ -185,6 +191,7 @@ public class RegisterEntertainmentProviderSystemTests {
         "Registration should continue after re-entering all details.");
   }
 
+  // Verifies that an empty organisation name restarts the registration flow before success.
   @Test
   void emptyOrganisationNameShowsErrorAndRequiresRegistrationDetailsAgain() {
     ScriptedView view = new ScriptedView(VALID_EMAIL, VALID_PASSWORD, "", VALID_EMAIL,
@@ -200,6 +207,7 @@ public class RegisterEntertainmentProviderSystemTests {
         "Registration should continue after re-entering all details.");
   }
 
+  // Verifies that an empty business number restarts the registration flow before success.
   @Test
   void emptyBusinessRegistrationNumberShowsErrorAndRequiresRegistrationDetailsAgain() {
     ScriptedView view = new ScriptedView(VALID_EMAIL, VALID_PASSWORD, VALID_ORG, "", VALID_EMAIL,
@@ -215,6 +223,7 @@ public class RegisterEntertainmentProviderSystemTests {
         "Registration should continue after re-entering all details.");
   }
 
+  // Verifies that an empty contact name restarts the registration flow before success.
   @Test
   void emptyContactNameShowsErrorAndRequiresRegistrationDetailsAgain() {
     ScriptedView view = new ScriptedView(VALID_EMAIL, VALID_PASSWORD, VALID_ORG, VALID_BIZ_NUM, "",
@@ -230,6 +239,7 @@ public class RegisterEntertainmentProviderSystemTests {
         "Registration should continue after re-entering all details.");
   }
 
+  // Verifies that an empty description restarts the registration flow before success.
   @Test
   void emptyDescriptionShowsErrorAndRequiresRegistrationDetailsAgain() {
     ScriptedView view =

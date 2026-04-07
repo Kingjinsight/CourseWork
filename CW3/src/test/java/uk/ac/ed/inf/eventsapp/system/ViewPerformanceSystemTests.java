@@ -31,12 +31,14 @@ public class ViewPerformanceSystemTests {
   @BeforeEach
   @SuppressWarnings("unused")
   void setUp() {
+    // Resets the shared event and performance collections before each view-performance scenario.
     events = new ArrayList<>();
     performances = new ArrayList<>();
     provider = new EntertainmentProvider("provider@example.com", "encrypted_password",
         "Festival Org", "BN-1234567", "Provider Rep", "Runs live events");
   }
 
+  // Verifies that a logged-in user can view the detailed information for a valid performance ID.
   @Test
   void loggedInUserCanViewDetailedPerformanceInformation() {
     events.add(createEventWithPerformance(1L, "Spring Concert", EventType.MUSIC,
@@ -66,6 +68,7 @@ public class ViewPerformanceSystemTests {
     assertTrue(view.getErrorMessages().isEmpty());
   }
 
+  // Verifies that unauthenticated users cannot view performance details.
   @Test
   void guestCannotViewPerformanceDetails() {
     events.add(createEventWithPerformance(1L, "Spring Concert", EventType.MUSIC,
@@ -81,6 +84,7 @@ public class ViewPerformanceSystemTests {
     assertEquals(null, view.getLastDisplayedPerformance());
   }
 
+  // Verifies that invalid performance-ID input shows an error before a successful retry.
   @Test
   void invalidPerformanceIdShowsAnErrorMessage() {
     events.add(createEventWithPerformance(1L, "Spring Concert", EventType.MUSIC,
@@ -99,6 +103,7 @@ public class ViewPerformanceSystemTests {
     assertNotNull(view.getLastDisplayedPerformance());
   }
 
+  // Verifies that an unknown performance ID shows an error before a successful retry.
   @Test
   void unknownPerformanceIdShowsAnErrorMessage() {
     events.add(createEventWithPerformance(1L, "Spring Concert", EventType.MUSIC,

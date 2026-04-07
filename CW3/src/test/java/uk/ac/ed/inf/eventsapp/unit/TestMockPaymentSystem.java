@@ -17,23 +17,25 @@ public class TestMockPaymentSystem {
   @BeforeEach
   @SuppressWarnings("unused")
   void setUp() {
+    // Creates a fresh mock payment system for each payment and refund scenario.
     paymentSystem = new MockPaymentSystem();
   }
 
-  // --- processPayment ---
-
+  // Verifies that valid payment input is accepted.
   @Test
   void processPaymentReturnsTrueForValidInputs() {
     assertTrue(paymentSystem.processPayment(2, "Live Music", "student@ed.ac.uk", 123456789,
         "provider@gmail.com", 30.0), "processPayment should return true for valid inputs.");
   }
 
+  // Verifies that the minimum valid ticket count is accepted for payment.
   @Test
   void processPaymentReturnsTrueForMinimumValidTickets() {
     assertTrue(paymentSystem.processPayment(1, "Live Music", "student@ed.ac.uk", 123456789,
         "provider@gmail.com", 15.0), "processPayment should return true for exactly 1 ticket.");
   }
 
+  // Verifies that the minimum positive transaction amount is accepted for payment.
   @Test
   void processPaymentReturnsTrueForMinimumValidAmount() {
     assertTrue(
@@ -42,8 +44,7 @@ public class TestMockPaymentSystem {
         "processPayment should return true for the minimum positive transaction amount.");
   }
 
-  // --- processPayment: phone number is not validated ---
-
+  // Verifies that phone-number value does not affect successful payment processing.
   @Test
   void processPaymentReturnsTrueForZeroPhoneNumber() {
     assertTrue(paymentSystem.processPayment(2, "Live Music", "student@ed.ac.uk", 0,
@@ -51,6 +52,7 @@ public class TestMockPaymentSystem {
         "processPayment should return true regardless of phone number value.");
   }
 
+  // Verifies that negative phone numbers do not affect successful payment processing.
   @Test
   void processPaymentReturnsTrueForNegativePhoneNumber() {
     assertTrue(paymentSystem.processPayment(2, "Live Music", "student@ed.ac.uk", -1,
@@ -58,8 +60,7 @@ public class TestMockPaymentSystem {
         "processPayment should return true even with negative phone number.");
   }
 
-  // --- processPayment: null inputs ---
-
+  // Verifies that payment fails when the student email is missing.
   @Test
   void processPaymentReturnsFalseForNullStudentEmail() {
     assertFalse(
@@ -67,6 +68,7 @@ public class TestMockPaymentSystem {
         "processPayment should return false when studentEmail is null.");
   }
 
+  // Verifies that payment fails when the provider email is missing.
   @Test
   void processPaymentReturnsFalseForNullProviderEmail() {
     assertFalse(
@@ -74,22 +76,21 @@ public class TestMockPaymentSystem {
         "processPayment should return false when epEmail is null.");
   }
 
+  // Verifies that payment fails when the event title is missing.
   @Test
   void processPaymentReturnsFalseForNullEventTitle() {
     assertFalse(paymentSystem.processPayment(2, null, "student@ed.ac.uk", 123456789,
         "provider@gmail.com", 30.0), "processPayment should return false when eventTitle is null.");
   }
 
-  // --- processPayment: multiple nulls ---
-
+  // Verifies that payment fails when all required string inputs are missing.
   @Test
   void processPaymentReturnsFalseWhenAllStringsNull() {
     assertFalse(paymentSystem.processPayment(2, null, null, 123456789, null, 30.0),
         "processPayment should return false when all string parameters are null.");
   }
 
-  // --- processPayment: large values ---
-
+  // Verifies that very large ticket counts still pass the mock payment rules.
   @Test
   void processPaymentReturnsTrueForLargeTicketCount() {
     assertTrue(
@@ -98,6 +99,7 @@ public class TestMockPaymentSystem {
         "processPayment should return true for very large ticket count.");
   }
 
+  // Verifies that extremely small positive transaction amounts still pass the mock payment rules.
   @Test
   void processPaymentReturnsTrueForVerySmallPositiveAmount() {
     assertTrue(
@@ -106,8 +108,7 @@ public class TestMockPaymentSystem {
         "processPayment should return true for the smallest positive double.");
   }
 
-  // --- processPayment: invalid numeric inputs ---
-
+  // Verifies that zero tickets are rejected during payment.
   @Test
   void processPaymentReturnsFalseForZeroTickets() {
     assertFalse(
@@ -116,6 +117,7 @@ public class TestMockPaymentSystem {
         "processPayment should return false when numTickets is zero.");
   }
 
+  // Verifies that negative ticket counts are rejected during payment.
   @Test
   void processPaymentReturnsFalseForNegativeTickets() {
     assertFalse(
@@ -124,6 +126,7 @@ public class TestMockPaymentSystem {
         "processPayment should return false when numTickets is negative.");
   }
 
+  // Verifies that zero transaction amounts are rejected during payment.
   @Test
   void processPaymentReturnsFalseForZeroAmount() {
     assertFalse(
@@ -132,6 +135,7 @@ public class TestMockPaymentSystem {
         "processPayment should return false when transactionAmount is zero.");
   }
 
+  // Verifies that negative transaction amounts are rejected during payment.
   @Test
   void processPaymentReturnsFalseForNegativeAmount() {
     assertFalse(
@@ -140,8 +144,7 @@ public class TestMockPaymentSystem {
         "processPayment should return false when transactionAmount is negative.");
   }
 
-  // --- processRefund ---
-
+  // Verifies that valid refund input with an organiser message is accepted.
   @Test
   void processRefundReturnsTrueForValidInputsWithMessage() {
     assertTrue(
@@ -150,6 +153,7 @@ public class TestMockPaymentSystem {
         "processRefund should return true for valid inputs with an organiser message.");
   }
 
+  // Verifies that a null organiser message is allowed during refund processing.
   @Test
   void processRefundReturnsTrueForNullOrganiserMessage() {
     assertTrue(
@@ -158,6 +162,7 @@ public class TestMockPaymentSystem {
         "processRefund should return true even when organiserMsg is null.");
   }
 
+  // Verifies that the minimum valid ticket count is accepted for refunds.
   @Test
   void processRefundReturnsTrueForMinimumValidTickets() {
     assertTrue(
@@ -166,6 +171,7 @@ public class TestMockPaymentSystem {
         "processRefund should return true for exactly 1 ticket.");
   }
 
+  // Verifies that the minimum positive transaction amount is accepted for refunds.
   @Test
   void processRefundReturnsTrueForMinimumValidAmount() {
     assertTrue(
@@ -174,8 +180,7 @@ public class TestMockPaymentSystem {
         "processRefund should return true for the minimum positive transaction amount.");
   }
 
-  // --- processRefund: large values ---
-
+  // Verifies that very large ticket counts still pass the mock refund rules.
   @Test
   void processRefundReturnsTrueForLargeTicketCount() {
     assertTrue(
@@ -184,20 +189,21 @@ public class TestMockPaymentSystem {
         "processRefund should return true for very large ticket count.");
   }
 
-  // --- processRefund: null inputs ---
-
+  // Verifies that refunds fail when the student email is missing.
   @Test
   void processRefundReturnsFalseForNullStudentEmail() {
     assertFalse(paymentSystem.processRefund(2, "Live Music", null, 123456789, "provider@gmail.com",
         30.0, "Cancelled"), "processRefund should return false when studentEmail is null.");
   }
 
+  // Verifies that refunds fail when the provider email is missing.
   @Test
   void processRefundReturnsFalseForNullProviderEmail() {
     assertFalse(paymentSystem.processRefund(2, "Live Music", "student@ed.ac.uk", 123456789, null,
         30.0, "Cancelled"), "processRefund should return false when epEmail is null.");
   }
 
+  // Verifies that refunds fail when the event title is missing.
   @Test
   void processRefundReturnsFalseForNullEventTitle() {
     assertFalse(paymentSystem.processRefund(2, null, "student@ed.ac.uk", 123456789,
@@ -205,8 +211,7 @@ public class TestMockPaymentSystem {
         "processRefund should return false when eventTitle is null.");
   }
 
-  // --- processRefund: empty string inputs ---
-
+  // Verifies that an empty organiser message is still accepted during refunds.
   @Test
   void processRefundReturnsTrueForEmptyOrganiserMessage() {
     assertTrue(
@@ -215,8 +220,7 @@ public class TestMockPaymentSystem {
         "processRefund should return true when organiserMsg is an empty string.");
   }
 
-  // --- processRefund: invalid numeric inputs ---
-
+  // Verifies that zero tickets are rejected during refund processing.
   @Test
   void processRefundReturnsFalseForZeroTickets() {
     assertFalse(
@@ -225,6 +229,7 @@ public class TestMockPaymentSystem {
         "processRefund should return false when numTickets is zero.");
   }
 
+  // Verifies that negative ticket counts are rejected during refund processing.
   @Test
   void processRefundReturnsFalseForNegativeTickets() {
     assertFalse(
@@ -233,6 +238,7 @@ public class TestMockPaymentSystem {
         "processRefund should return false when numTickets is negative.");
   }
 
+  // Verifies that zero transaction amounts are rejected during refund processing.
   @Test
   void processRefundReturnsFalseForZeroAmount() {
     assertFalse(
@@ -241,6 +247,7 @@ public class TestMockPaymentSystem {
         "processRefund should return false when transactionAmount is zero.");
   }
 
+  // Verifies that negative transaction amounts are rejected during refund processing.
   @Test
   void processRefundReturnsFalseForNegativeAmount() {
     assertFalse(

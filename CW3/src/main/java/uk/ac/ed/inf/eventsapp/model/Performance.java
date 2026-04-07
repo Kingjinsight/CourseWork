@@ -7,6 +7,10 @@ import java.util.Collection;
 
 /**
  * Performance entity
+ *
+ * <p>
+ * A performance represents a single scheduled occurrence of an {@link Event}, including its time
+ * range, venue information, performer list, booking state, and ticketing state.
  */
 public class Performance {
   private long performanceID;
@@ -38,6 +42,13 @@ public class Performance {
   private static final DateTimeFormatter SEARCH_RESULT_TIME_FORMATTER =
       DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
 
+  /**
+   * Creates an empty performance placeholder instance.
+   *
+   * <p>
+   * This is retained to mirror the UML surface and to support tests that assemble objects
+   * incrementally.
+   */
   public Performance() {
     this.performerNames = new ArrayList<>();
     this.bookings = new ArrayList<>();
@@ -207,6 +218,11 @@ public class Performance {
     bookings.add(booking);
   }
 
+  /**
+   * Returns the default summary representation used in search results.
+   *
+   * @return the summary string form of the performance
+   */
   @Override
   public String toString() {
     return toString(false);
@@ -275,6 +291,13 @@ public class Performance {
     return performanceID == candidatePerformanceID;
   }
 
+  /**
+   * Checks whether this performance has the supplied start and end date/time pair.
+   *
+   * @param candidateStartDateTime the candidate start date/time
+   * @param candidateEndDateTime the candidate end date/time
+   * @return {@code true} if both date/time values match exactly
+   */
   boolean hasSameSchedule(LocalDateTime candidateStartDateTime,
       LocalDateTime candidateEndDateTime) {
     return startDateTime != null && endDateTime != null

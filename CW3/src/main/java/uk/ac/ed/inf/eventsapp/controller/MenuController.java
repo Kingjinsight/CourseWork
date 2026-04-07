@@ -11,6 +11,14 @@ public class MenuController extends Controller {
   private final EventPerformanceController eventPerformanceController;
   private final BookingController bookingController;
 
+  /**
+   * Creates the top-level menu dispatcher for the application.
+   *
+   * @param view shared text view
+   * @param userController controller responsible for authentication and user flows
+   * @param eventPerformanceController controller responsible for event and performance flows
+   * @param bookingController controller responsible for booking flows
+   */
   public MenuController(View view, UserController userController,
       EventPerformanceController eventPerformanceController, BookingController bookingController) {
     super(view);
@@ -48,6 +56,11 @@ public class MenuController extends Controller {
     }
   }
 
+  /**
+   * Handles one iteration of the guest main menu.
+   *
+   * @return {@code true} to keep the top-level menu running, or {@code false} to exit
+   */
   private boolean handleGuestMainMenu() {
     int selectedIndex = selectFromMenu(List.of(GuestMenuOptions.values()), "Guest Menu");
     if (selectedIndex < 0) {
@@ -64,6 +77,11 @@ public class MenuController extends Controller {
     return true;
   }
 
+  /**
+   * Handles one iteration of the student main menu.
+   *
+   * @return {@code true} to keep the top-level menu running, or {@code false} to exit
+   */
   private boolean handleStudentMainMenu() {
     int selectedIndex = selectFromMenu(List.of(StudentMenuOptions.values()), "Student Menu");
     if (selectedIndex < 0) {
@@ -84,6 +102,11 @@ public class MenuController extends Controller {
     return true;
   }
 
+  /**
+   * Handles one iteration of the entertainment-provider main menu.
+   *
+   * @return {@code true} to keep the top-level menu running, or {@code false} to exit
+   */
   private boolean handleEntertainmentProviderMainMenu() {
     int selectedIndex =
         selectFromMenu(List.of(EPMenuOptions.values()), "Entertainment Provider Menu");
@@ -104,6 +127,11 @@ public class MenuController extends Controller {
     return true;
   }
 
+  /**
+   * Handles one iteration of the admin-staff main menu.
+   *
+   * @return {@code true} to keep the top-level menu running, or {@code false} to exit
+   */
   private boolean handleAdminStaffMainMenu() {
     int selectedIndex = selectFromMenu(List.of(AdminMenuOptions.values()), "Admin Menu");
     if (selectedIndex < 0) {
@@ -121,18 +149,37 @@ public class MenuController extends Controller {
     return true;
   }
 
+  /**
+   * Returns the controller responsible for user-related use cases.
+   *
+   * @return the shared user controller
+   */
   private UserController getUserController() {
     return userController;
   }
 
+  /**
+   * Returns the controller responsible for event and performance use cases.
+   *
+   * @return the shared event/performance controller
+   */
   private EventPerformanceController getEventPerformanceController() {
     return eventPerformanceController;
   }
 
+  /**
+   * Returns the controller responsible for booking use cases.
+   *
+   * @return the shared booking controller
+   */
   private BookingController getBookingController() {
     return bookingController;
   }
 
+  /**
+   * Synchronises the currently logged-in user across the three concrete controllers used by the
+   * menu flow.
+   */
   private void syncCurrentUserAcrossControllers() {
     UserController uc = getUserController();
     setCurrentUser(uc.getCurrentUser());

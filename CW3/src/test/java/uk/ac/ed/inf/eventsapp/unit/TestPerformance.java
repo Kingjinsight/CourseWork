@@ -20,7 +20,7 @@ import uk.ac.ed.inf.eventsapp.model.Student;
 import uk.ac.ed.inf.eventsapp.model.StudentPreferences;
 
 /**
- * Unit-test scaffold for the UML Performance class.
+ * Unit-test scaffold for the Performance class.
  */
 public class TestPerformance {
   private static final LocalDateTime FUTURE_START = LocalDateTime.now().plusDays(30);
@@ -36,6 +36,8 @@ public class TestPerformance {
   @BeforeEach
   @SuppressWarnings("unused")
   void setUp() {
+    // Builds one ticketed and one non-ticketed fixture so event-linked behaviour can be reused
+    // across tests.
     provider = new EntertainmentProvider("provider@gmail.com", "password", "EooEle", "1234567890",
         "Peter", "This is EooEle");
     ticketedEvent = new Event(1L, "Live Music", EventType.MUSIC, true, provider);
@@ -45,25 +47,27 @@ public class TestPerformance {
         false, false, 100, 0, 15.0, PerformanceStatus.ACTIVE, ticketedEvent);
   }
 
-  // --- isActive()/cancel() ---
+  // Verifies that a newly created performance starts in the active state.
   @Test
   void newPerformanceSIsActive() {
     assertTrue(performance.isActive(), "Newly created perofrmance should be active.");
   }
 
+  // Verifies that cancelling a performance changes it to an inactive state.
   @Test
   void cancelMakesPerformanceInactive() {
     performance.cancel();
     assertFalse(performance.isActive(), "Cancelled performance should not be active.");
   }
 
-  // --- checkIfEventIsTicketed() ---
+  // Verifies that ticketed performances report their linked event as ticketed.
   @Test
   void checkIfEventIsTicketedReturnsTrueForTicketedEvent() {
     assertTrue(performance.checkIfEventIsTicketed(),
         "Should return true when linked event is ticketed.");
   }
 
+  // Verifies that non-ticketed performances report their linked event as non-ticketed.
   @Test
   void checkIfEventIsTicketedFalseForNonTicketedEvent() {
     Performance nonTicketed = new Performance(2L, FUTURE_START, FUTURE_END, List.of("Actor"),
@@ -72,6 +76,7 @@ public class TestPerformance {
         "Should return false when linked event is not ticketed");
   }
 
+  // Verifies that performances without a linked event are treated as non-ticketed.
   @Test
   void checkIfEventIsTicketedReturnFalseWhenNoEventLinked() {
     Performance noEvent = new Performance(3L, FUTURE_START, FUTURE_END, List.of("Performer"),
@@ -79,12 +84,13 @@ public class TestPerformance {
     assertFalse(noEvent.checkIfEventIsTicketed(), "Should return false when no event is linked.");
   }
 
-  // --- checkIfTicketLeft() ---
+  // Verifies that available tickets are reported correctly when stock remains.
   @Test
   void checkIfTicketLeftReturnTrueWhenTicketsAvailable() {
     assertTrue(performance.checkIfTicketsLeft(1), "Should return true when tickets are available.");
   }
 
+  // Verifies that sold-out performances reject further ticket requests.
   @Test
   void checkIfTicketsLeftReturnsFalseWhenSoldOut() {
     Performance soldOut = new Performance(4L, FUTURE_START, FUTURE_END, List.of("Band"),
@@ -92,18 +98,18 @@ public class TestPerformance {
     assertFalse(soldOut.checkIfTicketsLeft(1), "Should return false when all tickets are sold.");
   }
 
+  // Verifies that requesting exactly the remaining number of tickets still succeeds.
   @Test
   void checkIfTicketsLeftReturnsTrueAtExactBoundary() {
-    // 100 total, 99 sold — exactly 1 left
     Performance almostSoldOut = new Performance(5L, FUTURE_START, FUTURE_END, List.of("Band"),
         "Main Hall", 100, false, false, 100, 99, 15.0, PerformanceStatus.ACTIVE, ticketedEvent);
     assertTrue(almostSoldOut.checkIfTicketsLeft(1),
         "Should return true when exactly the requested number of tickets remain.");
   }
 
+  // Verifies that requesting more tickets than remain is rejected.
   @Test
   void checkIfTicketsLeftReturnsFalseWhenNotEnoughRemain() {
-    // 100 total, 99 sold — 1 left, but requesting 2
     Performance almostSoldOut = new Performance(5L, FUTURE_START, FUTURE_END, List.of("Band"),
         "Main Hall", 100, false, false, 100, 99, 15.0, PerformanceStatus.ACTIVE, ticketedEvent);
     assertFalse(almostSoldOut.checkIfTicketsLeft(2),
@@ -111,7 +117,7 @@ public class TestPerformance {
   }
 
 
-  // --- addNumTicketSold
+  // Verifies that adding sold tickets reduces later availability.
   @Test
   void addNumTicketsSoldReducesAvailableTickets() {
     performance.addNumTicketsSold(100);
@@ -119,6 +125,7 @@ public class TestPerformance {
         "After selling all tickets, no tickets should remain.");
   }
 
+  // Verifies that partial sales still leave tickets available.
   @Test
   void addNumTicketsSoldPartialStillHasTicketsLeft() {
     performance.addNumTicketsSold(50);
@@ -126,6 +133,7 @@ public class TestPerformance {
         "After selling some tickets, remaining tickets should still be available.");
   }
 
+  // Verifies that removing sold tickets restores future availability.
   @Test
   void removeNumTicketsSoldRestoresTicketAvailability() {
     performance.addNumTicketsSold(100);
@@ -134,6 +142,7 @@ public class TestPerformance {
         "Removing sold tickets should restore ticket availability.");
   }
 
+  // Verifies that removing sold tickets cannot drive the sold count below zero.
   @Test
   void removeNumTicketsSoldDoesNotGoBelowZero() {
     performance.removeNumTicketsSold(10);
@@ -142,20 +151,21 @@ public class TestPerformance {
   }
 
 
-  // --- getFinalTicketPrice()
+  // Verifies that the final ticket price matches the configured price.
   @Test
   void getFinalTicketPriceReturnsRightPrice() {
     assertEquals(15.0, performance.getFinalTicketPrice(),
         "Should return the ticket price set at right price");
   }
 
-  // --- checkHasNotHappenedYet()
+  // Verifies that future performances are reported as not having happened yet.
   @Test
   void checkHasNotHappenedYetReturnsTrueForFuturePerformance() {
     assertTrue(performance.checkHasNotHappenedYet(),
         "Should return true for a performance scheduled in the future");
   }
 
+  // Verifies that past performances are reported as already happened.
   @Test
   void checkHasNotHappenedYetReturnsFalseForPastPerformance() {
     Performance past = new Performance(6L, PAST_START, PAST_END, List.of("Band"), "Main Hall", 120,
@@ -164,26 +174,28 @@ public class TestPerformance {
         "Should return false for a performance that has already happened.");
   }
 
-  // --- checkCreatedByEP()
+  // Verifies that organiser-email checks succeed for the owning provider.
   @Test
   void checkCreatedByEPReturnsTrueForMatchingEmail() {
     assertTrue(performance.checkCreatedByEP("provider@gmail.com"),
         "Should return true when the email matches the event organiser.");
   }
 
+  // Verifies that organiser-email checks fail for a different provider email.
   @Test
   void checkCreatedByEPReturnsFalseForDifferentEmail() {
     assertFalse(performance.checkCreatedByEP("hi@gmail.com"),
         "Should return false when the email does not match the event organiser.");
   }
 
-  // --- hasActiveBookings() / getActiveBookings()
+  // Verifies that performances with no bookings report no active bookings.
   @Test
   void hasActiveBookingReturnsFalseWhenNoBookings() {
     assertFalse(performance.hasActiveBookings(),
         "Should return false when no bookings have been added.");
   }
 
+  // Verifies that cancelled bookings do not count as active bookings.
   @Test
   void hasActiveBookingsReturnsFalseWhenOnlyCancelledBookings() {
     Student student =
@@ -195,6 +207,7 @@ public class TestPerformance {
         "Should return false when all bookings are cancelled.");
   }
 
+  // Verifies that adding an active booking changes the active-booking state.
   @Test
   void hasActiveBookingsReturnsTrueAfterActiveBookingAdded() {
     Student student =
@@ -207,6 +220,7 @@ public class TestPerformance {
   }
 
 
+  // Verifies that only active bookings are returned by the active-booking query.
   @Test
   void getActiveBookingsReturnsOnlyActiveBookings() {
     Student student =
@@ -221,6 +235,7 @@ public class TestPerformance {
         "Should return only the one active booking, not the cancelled one.");
   }
 
+  // Verifies that failed and provider-cancelled bookings are excluded from active bookings.
   @Test
   void getActiveBookingsExcludesPaymentFailedAndProviderCancelledBookings() {
     Student student =
@@ -239,12 +254,14 @@ public class TestPerformance {
         "Only bookings with ACTIVE status should be returned.");
   }
 
+  // Verifies that no refund details are produced when no active bookings exist.
   @Test
   void getBookingDetailsForRefundReturnsEmptyStringWhenNoActiveBookings() {
     assertEquals("", performance.getBookingDetailsForRefund(),
         "No active bookings should produce no refund details.");
   }
 
+  // Verifies that refund details are produced only for bookings that are still active.
   @Test
   void getBookingDetailsForRefundIncludesOnlyActiveBookings() {
     Student student =
@@ -264,6 +281,7 @@ public class TestPerformance {
         "Refund details should exclude cancelled bookings.");
   }
 
+  // Verifies that each active booking becomes a separate refund-detail line for later parsing.
   @Test
   void getBookingDetailsForRefundSeparatesMultipleActiveBookingsByLine() {
     Student firstStudent =
@@ -283,16 +301,19 @@ public class TestPerformance {
         "Multiple active bookings should be serialised onto separate lines.");
   }
 
+  // Verifies that the organiser email is exposed through the performance.
   @Test
   void getOrganiserEmailReturnsProviderEmail() {
     assertEquals("provider@gmail.com", performance.getOrganiserEmail());
   }
 
+  // Verifies that the linked event title is exposed through the performance.
   @Test
   void getEventTitleReturnsEventTitle() {
     assertEquals("Live Music", performance.getEventTitle());
   }
 
+  // Verifies that no organiser email is returned when no event is linked.
   @Test
   void getOrganiserEmailReturnsNullWhenNoEventIsLinked() {
     Performance withoutEvent = new Performance(7L, FUTURE_START, FUTURE_END, List.of("Band"),
@@ -301,6 +322,7 @@ public class TestPerformance {
         "No organiser email should be available when no event is linked.");
   }
 
+  // Verifies that no event title is returned when no event is linked.
   @Test
   void getEventTitleReturnsNullWhenNoEventIsLinked() {
     Performance withoutEvent = new Performance(8L, FUTURE_START, FUTURE_END, List.of("Band"),
@@ -309,28 +331,33 @@ public class TestPerformance {
         "No event title should be available when no event is linked.");
   }
 
+  // Verifies that ID matching succeeds for the performance's own ID.
   @Test
   void hasIDReturnsTrueForMatchingID() {
     assertTrue(performance.hasID(1L));
   }
 
+  // Verifies that ID matching fails for a different performance ID.
   @Test
   void hasIDReturnsFalseForDifferentID() {
     assertFalse(performance.hasID(999L));
   }
 
+  // Verifies that event membership succeeds for the linked event ID.
   @Test
   void belongsToEventReturnsTrueForMatchingEventID() {
     assertTrue(performance.belongsToEvent(1L),
         "The performance should report that it belongs to its linked event.");
   }
 
+  // Verifies that event membership fails for a different event ID.
   @Test
   void belongsToEventReturnsFalseForDifferentEventID() {
     assertFalse(performance.belongsToEvent(999L),
         "The performance should not match a different event ID.");
   }
 
+  // Verifies that summary output contains the key fields needed by search results.
   @Test
   void summaryToStringContainsKeySearchFields() {
     String summary = performance.toString(false);
@@ -344,6 +371,7 @@ public class TestPerformance {
         "Summary output should include the provider display name.");
   }
 
+  // Verifies that detailed output contains the key fields needed by the view-performance flow.
   @Test
   void detailedToStringContainsKeyDetailFields() {
     String details = performance.toString(true);
@@ -356,6 +384,7 @@ public class TestPerformance {
         "Detailed output should include the performance status.");
   }
 
+  // Verifies that detailed output distinguishes between ticketed and non-ticketed performances.
   @Test
   void detailedToStringForNonTicketedPerformanceShowsNoTicketsRequired() {
     Performance nonTicketed = new Performance(9L, FUTURE_START, FUTURE_END, List.of("Actor"),

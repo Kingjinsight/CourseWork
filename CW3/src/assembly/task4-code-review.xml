@@ -14,6 +14,7 @@
             <outputDirectory>/</outputDirectory>
             <includes>
                 <include>pom.xml</include>
+                <include>README.md</include>
             </includes>
         </fileSet>
 
@@ -40,6 +41,16 @@
                 <include>uk/ac/ed/inf/eventsapp/unit/TestFacultyMember.java</include>
                 <include>uk/ac/ed/inf/eventsapp/unit/TestRegistrationUtility.java</include>
             </includes>
+            <excludes>
+                <exclude>**/.DS_Store</exclude>
+                <exclude>**/__MACOSX/**</exclude>
+                <exclude>**/._*</exclude>
+            </excludes>
+        </fileSet>
+
+        <fileSet>
+            <directory>${project.basedir}/target/javadocs/CW3SECodeReviewImplementationGroup22-javadocs</directory>
+            <outputDirectory>/docs</outputDirectory>
             <excludes>
                 <exclude>**/.DS_Store</exclude>
                 <exclude>**/__MACOSX/**</exclude>

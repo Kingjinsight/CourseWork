@@ -96,6 +96,49 @@
 
     <profiles>
         <profile>
+            <id>se-implementation-javadocs</id>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-dependency-plugin</artifactId>
+                        <version>3.7.1</version>
+                        <executions>
+                            <execution>
+                                <id>build-se-implementation-javadoc-classpath</id>
+                                <phase>generate-resources</phase>
+                                <goals>
+                                    <goal>build-classpath</goal>
+                                </goals>
+                                <configuration>
+                                    <includeScope>compile</includeScope>
+                                    <outputFile>${project.build.directory}/se-implementation-javadoc.classpath</outputFile>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                    <plugin>
+                        <groupId>org.codehaus.mojo</groupId>
+                        <artifactId>exec-maven-plugin</artifactId>
+                        <version>3.5.0</version>
+                        <executions>
+                            <execution>
+                                <id>generate-se-implementation-javadocs</id>
+                                <phase>process-resources</phase>
+                                <goals>
+                                    <goal>exec</goal>
+                                </goals>
+                                <configuration>
+                                    <executable>${project.basedir}/../scripts/generate-cw3-main-javadocs.sh</executable>
+                                    <workingDirectory>${project.basedir}</workingDirectory>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+        <profile>
             <id>se-implementation-zip</id>
             <build>
                 <plugins>
@@ -117,6 +160,49 @@
                                 <goals>
                                     <goal>single</goal>
                                 </goals>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+        <profile>
+            <id>task4-code-review-javadocs</id>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-dependency-plugin</artifactId>
+                        <version>3.7.1</version>
+                        <executions>
+                            <execution>
+                                <id>build-task4-javadoc-classpath</id>
+                                <phase>generate-resources</phase>
+                                <goals>
+                                    <goal>build-classpath</goal>
+                                </goals>
+                                <configuration>
+                                    <includeScope>compile</includeScope>
+                                    <outputFile>${project.build.directory}/task4-javadoc.classpath</outputFile>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                    <plugin>
+                        <groupId>org.codehaus.mojo</groupId>
+                        <artifactId>exec-maven-plugin</artifactId>
+                        <version>3.5.0</version>
+                        <executions>
+                            <execution>
+                                <id>generate-task4-code-review-javadocs</id>
+                                <phase>process-resources</phase>
+                                <goals>
+                                    <goal>exec</goal>
+                                </goals>
+                                <configuration>
+                                    <executable>${project.basedir}/../scripts/generate-cw3-task4-javadocs.sh</executable>
+                                    <workingDirectory>${project.basedir}</workingDirectory>
+                                </configuration>
                             </execution>
                         </executions>
                     </plugin>

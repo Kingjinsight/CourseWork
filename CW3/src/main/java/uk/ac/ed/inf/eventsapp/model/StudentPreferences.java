@@ -4,7 +4,11 @@ import java.util.HashSet;
 import java.util.Set;
 
 /**
- * Student preferences from the UML diagram.
+ * Student preferences
+ *
+ * <p>
+ * The 3-person-group solution supports preferences for music, theatre, dance, movie, and sports
+ * events, with up to three preferred types entered through the text interface.
  */
 public class StudentPreferences {
   private boolean preferMusicEvents;

@@ -27,6 +27,14 @@ public class EventPerformanceController extends Controller {
   private final Collection<Performance> performances;
   private final PaymentSystem paymentSystem;
 
+  /**
+   * Creates an event/performance controller backed by the shared application collections.
+   *
+   * @param view the text view used for interaction
+   * @param events the shared event collection
+   * @param performances the shared performance collection
+   * @param paymentSystem the external payment-system adapter
+   */
   public EventPerformanceController(View view, Collection<Event> events,
       Collection<Performance> performances, PaymentSystem paymentSystem) {
     super(view);
@@ -37,6 +45,11 @@ public class EventPerformanceController extends Controller {
     this.paymentSystem = paymentSystem;
   }
 
+  /**
+   * Creates a new event and one or more performances owned by the current entertainment provider.
+   *
+   * @return the created event, or {@code null} if validation fails
+   */
   public Event createEvent() {
     if (!checkCurrentUserIsEntertainmentProvider()) {
       view.displayError("Only logged-in entertainment providers can create events.");
@@ -157,6 +170,11 @@ public class EventPerformanceController extends Controller {
     return event;
   }
 
+  /**
+   * Searches for performances on a given date and displays matching summaries.
+   *
+   * Student searches prioritise performances whose events match the student's saved preferences.
+   */
   public void searchforPerformances() {
     if (checkCurrentUserIsGuest()) {
       view.displayError("Only logged-in users can search for performances.");
@@ -200,6 +218,9 @@ public class EventPerformanceController extends Controller {
     view.displayListOfPerformances(orderedPerformanceInfo);
   }
 
+  /**
+   * Displays the detailed information for a single performance selected by ID.
+   */
   public void viewPerformance() {
     if (checkCurrentUserIsGuest()) {
       view.displayError("Only logged-in users can view performances.");
@@ -223,6 +244,12 @@ public class EventPerformanceController extends Controller {
     view.displaySpecificPerformance(performance.toString(true));
   }
 
+  /**
+   * Cancels a future performance owned by the current entertainment provider.
+   *
+   * If active bookings exist, the controller first gathers a non-empty cancellation message and
+   * then refunds every affected booking before cancelling the performance locally.
+   */
   public void cancelPerformance() {
     if (!checkCurrentUserIsEntertainmentProvider()) {
       view.displayError("Only entertainment providers can cancel performance.");
@@ -314,6 +341,13 @@ public class EventPerformanceController extends Controller {
     view.displaySuccess("Cancellation Successful!");
   }
 
+  /**
+   * Parses one line of serialised refund data produced by
+   * {@link Performance#getBookingDetailsForRefund()}.
+   *
+   * @param refundDetailLine the serialised refund-data line
+   * @return the parsed refund details, or {@code null} if the line is invalid
+   */
   private RefundDetails parseRefundDetails(String refundDetailLine) {
     if (refundDetailLine == null || refundDetailLine.isBlank()) {
       return null;
@@ -339,9 +373,27 @@ public class EventPerformanceController extends Controller {
     return new RefundDetails(numTickets, amountPaid, studentDetails[1], studentPhone);
   }
 
+  /**
+   * Value object used while converting booking refund data into arguments for
+   * {@link PaymentSystem#processRefund(int, String, String, int, String, double, String)}.
+   *
+   * @param numTickets the number of tickets to refund
+   * @param amountPaid the refund amount
+   * @param studentEmail the refunded student's email address
+   * @param studentPhone the refunded student's phone number
+   */
   private record RefundDetails(int numTickets, double amountPaid, String studentEmail,
       int studentPhone) {}
 
+  /**
+   * Placeholder for the 4-person-group sponsorship validation helper shown in the UML diagram.
+   *
+   * @param performance the performance that would be sponsored
+   * @param amount the proposed sponsorship amount
+   * @return never returns normally
+   * @throws UnsupportedOperationException because sponsor performance is out of scope for
+   *         three-person-group submissions
+   */
   @SuppressWarnings("unused")
   private Boolean checkIfSponsorshipPossible(Performance performance, int amount) {
     // Sponsor performance is a 4-person-group-only use case and is intentionally left
@@ -349,6 +401,13 @@ public class EventPerformanceController extends Controller {
     throw new UnsupportedOperationException("checkIfSponsorshipPossible is not implemented yet.");
   }
 
+  /**
+   * Placeholder for the 4-person-group {@code Sponsor performance} use case shown in the UML
+   * diagram.
+   *
+   * @throws UnsupportedOperationException because this use case is out of scope for
+   *         three-person-group submissions
+   */
   @SuppressWarnings("unused")
   public void sponsorPerformance() {
     // Sponsor performance is a 4-person-group-only use case and is intentionally left
@@ -356,14 +415,31 @@ public class EventPerformanceController extends Controller {
     throw new UnsupportedOperationException("sponsorPerformance is not implemented yet.");
   }
 
+  /**
+   * Adds an event to the shared application event collection.
+   *
+   * @param event the event to store
+   */
   private void addEvent(Event event) {
     events.add(event);
   }
 
+  /**
+   * Adds a performance to the shared application performance collection.
+   *
+   * @param performance the performance to store
+   */
   private void addPerformance(Performance performance) {
     performances.add(performance);
   }
 
+  /**
+   * Finds an event by its identifier.
+   *
+   * @param eventID the event identifier to look up
+   * @return the matching event, or {@code null} if no event matches
+   */
+  @SuppressWarnings("unused")
   private Event getEventByID(long eventID) {
     for (Event event : getEvents()) {
       if (event.getEventID() == eventID) {
@@ -373,6 +449,13 @@ public class EventPerformanceController extends Controller {
     return null;
   }
 
+  /**
+   * Finds an event by title.
+   *
+   * @param title the event title to look up
+   * @return the matching event, or {@code null} if no event matches
+   */
+  @SuppressWarnings("unused")
   private Event getEventByTitle(String title) {
     if (title == null || title.isBlank()) {
       return null;
@@ -386,6 +469,12 @@ public class EventPerformanceController extends Controller {
     return null;
   }
 
+  /**
+   * Finds a performance by its identifier.
+   *
+   * @param performanceID the performance identifier to look up
+   * @return the matching performance, or {@code null} if no performance matches
+   */
   private Performance getPerformanceByID(long performanceID) {
     for (Performance performance : performances) {
       if (performance.hasID(performanceID)) {
@@ -395,18 +484,42 @@ public class EventPerformanceController extends Controller {
     return null;
   }
 
+  /**
+   * Returns the next event identifier that will be assigned.
+   *
+   * @return the next event identifier
+   */
   private long getNextEventID() {
     return nextEventID;
   }
 
+  /**
+   * Returns the next performance identifier that will be assigned.
+   *
+   * @return the next performance identifier
+   */
   private long getNextPerformanceID() {
     return nextPerformanceID;
   }
 
+  /**
+   * Returns the shared event collection managed by this controller.
+   *
+   * @return the shared event collection
+   */
   private Collection<Event> getEvents() {
     return events;
   }
 
+  /**
+   * Checks whether another event already uses the same title and contains a performance scheduled
+   * at the supplied times.
+   *
+   * @param title the candidate event title
+   * @param startDateTime the candidate performance start date/time
+   * @param endDateTime the candidate performance end date/time
+   * @return {@code true} if a conflicting event/performance combination exists
+   */
   private boolean eventWithSameTitleHasPerformanceAtSameTimes(String title,
       LocalDateTime startDateTime, LocalDateTime endDateTime) {
     for (Event event : events) {
@@ -417,6 +530,11 @@ public class EventPerformanceController extends Controller {
     return false;
   }
 
+  /**
+   * Returns the current student's saved preferences when the logged-in user is a student.
+   *
+   * @return the current student's preferences, or {@code null} for non-students
+   */
   private StudentPreferences getStudentPreferences() {
     if (!checkCurrentUserIsStudent()) {
       return null;
@@ -425,6 +543,12 @@ public class EventPerformanceController extends Controller {
     return ((Student) currentUser).getPreferences();
   }
 
+  /**
+   * Checks whether a preference set contains at least one preferred event type.
+   *
+   * @param preferences the preference set to inspect
+   * @return {@code true} if at least one preference is enabled
+   */
   private boolean hasSpecifiedPreferences(StudentPreferences preferences) {
     return preferences != null && (preferences.isPreferMusicEvents()
         || preferences.isPreferTheaterEvents() || preferences.isPreferDanceEvents()

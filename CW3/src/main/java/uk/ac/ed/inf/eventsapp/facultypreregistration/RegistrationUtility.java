@@ -12,7 +12,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
-/** Handles lazy faculty preregistration from a configured file. */
+/**
+ * Handles lazy faculty preregistration from a configured file.
+ */
 public class RegistrationUtility {
   private static final String EMAIL_PATTERN = "^[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}$";
   private final String filePath;
@@ -98,7 +100,11 @@ public class RegistrationUtility {
     return facultyMember;
   }
 
-  /** @return an immutable snapshot of registered faculty members */
+  /**
+   * Returns an immutable snapshot of the faculty accounts created so far.
+   *
+   * @return registered faculty accounts known to this utility
+   */
   public synchronized Collection<FacultyMember> getRegisteredFacultyMembers() {
     return Collections.unmodifiableList(List.copyOf(registeredFacultyMembers.values()));
   }
