@@ -135,7 +135,7 @@ This approach enabled a unified interface and facilitated assigning specific fun
 
 \textbf{Reflection on Action}
 By using placeholder functions and assigning ownership from the start, we rarely encountered merge conflicts, as we seldom modified the same files or functions simultaneously.
-This time, our engagement exceeded that of previous coursework, leading to improved output.
+This time, our engagement exceeded that of previous coursework.
 We also implemented code review via pull requests, which was particularly important.
 In a complex MVC system with shared data structures and interdependent controllers, this ensured teammates understood each other's APIs and data structures before integrating changes.
 Our GitHub action CI check verified that CW3 files were modified, that all tests passed, and that the submission ZIP was built, which offers a convenient double-check after work.
@@ -150,18 +150,40 @@ rather than relying solely on ad-hoc messaging.
 
 \subsection{Reflection on the Quality of the Work and Quality Attributes}
 
-\textbf{Suggested structure:}
-\begin{itemize}
-  \item how well the different tasks were tackled
-  \item one quality attribute shown by the final system
-  \item concrete implementation or testing features that support it
-  \item what could have been improved with more time or resources
-\end{itemize}
-
 \noindent
 \textbf{Word limit: 250 words maximum}
 
-\vspace{10em}
+\textbf{Experience.}
+We implemented all ten assigned use cases in a complex MVC system, then supported the
+implementation with unit tests for the performance class and mock external systems, system tests for each use
+case, and integrated tests that chain multiple use cases through shared state. We also
+reviewed an external group's code submission as a structured code review exercise.
+
+\textbf{Reflection on Action.}
+The quality attribute best demonstrated by the final system is \textit{reliability} ---
+the system behaves correctly and gracefully across a wide range of inputs. Every
+controller method checks the current user's role before proceeding, preventing
+unauthorised actions. All user inputs are parsed defensively: invalid types produce an
+error and prompt a retry rather than crashing the system. Ownership is enforced before
+any destructive operation --- only the student who created a booking can cancel it, and
+only the entertainment provider who owns an event can cancel its performances. Payment
+failures are handled gracefully: a booking is created first and marked
+\texttt{PAYMENTFAILED} if the charge does not go through, preserving the booking record.
+The cancellation workflow uses a two-pass approach --- refunds are processed for all
+active bookings before any status is changed, so a failed refund aborts the entire
+cancellation cleanly. These decisions are validated by 183 passing tests across unit,
+system, and integrated levels.
+
+\textbf{Theory.}
+We learned that reliability emerges from many small, consistent guards rather than one
+centralised check. Each null check, type parse, or role verification is simple in
+isolation, but together they prevent the system from entering an inconsistent state.
+
+\textbf{Preparation.}
+With more time, we would address two gaps: passwords are currently stored in plaintext
+in \texttt{docs/registered-eps.txt}, and in-memory data (events, performances, bookings)
+is lost on restart. Password hashing and a persistent data store would be the natural
+next steps.
 
 \subsection{Reflection on Tools, Agile Approaches and Practices}
 
